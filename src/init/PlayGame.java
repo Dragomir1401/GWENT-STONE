@@ -1,5 +1,9 @@
 package init;
+
 import Cards.Card;
+import Cards.Firestorm;
+import Cards.HeartHound;
+import Cards.Winterfell;
 import Games.Actions;
 import Games.Game;
 import Players.Deck;
@@ -7,7 +11,6 @@ import Players.Player;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,32 +33,39 @@ public class PlayGame {
               Local variables to track rounds
              */
             int countEndTurns = 0;
-            boolean drewCardAlready = false;
-            int roundNumber = 0;
+            int roundNumber = 1;
             // the playing table gets initialised and tracks what player is currently capable of placing cards
             Table table = new Table();
+
+            // Draw cards and set the current player
+            drawCardsAndIncreaseMana(player1, player2, gameIterator, roundNumber);
             table.setCurrentlyPlaying(gameIterator.getStartGame().getStartingPlayer());
 
             for (Actions actionIterator : gameIterator.getActions()) {
                 /* Draw cards when we reached 0 or 2 EndTurns meaning each player ended the current round */
-                if(countEndTurns % 2 == 0 && !drewCardAlready) {
-                    drawCardsAndIncreaseMana(player1, player2, gameIterator, roundNumber + 1);
+                if(countEndTurns == 2) {
                     roundNumber++;
-                    drewCardAlready = true;
+                    drawCardsAndIncreaseMana(player1, player2, gameIterator, roundNumber);
+                    unfreezeCards(table);
                     countEndTurns = 0;
                 }
+                debug(actionIterator, table, player1, player2);
 
                 switch (actionIterator.getCommand()) {
                     case "getPlayerDeck" -> output.add(getPlayerDeck(actionIterator, gameIterator, player1, player2));
-                    case "getPlayerTurn" -> output.add(getPlayerTurn(actionIterator, gameIterator));
+                    case "getPlayerTurn" -> output.add(getPlayerTurn(actionIterator, table));
                     case "getPlayerHero" -> output.add(showPlayerHero(gameIterator, actionIterator));
                     case "getCardsInHand" -> output.add(getCardsInHand(player1, player2, actionIterator));
-                    case "placeCard" -> placeCard(actionIterator, table, gameIterator, player1, player2);
+                    case "placeCard" -> placeCard(actionIterator, table, player1, player2, output);
+                    case "getCardsOnTable" -> output.add(getCardsOnTable(actionIterator, table));
+                    case "getPlayerMana" -> output.add(getPlayerMana(actionIterator, player1, player2, table));
+                    case "getEnvironmentCardsInHand" -> output.add(getEnvironmentCardsInHand(actionIterator, player1, player2));
+                    case "useEnvironmentCard" -> errorCatchUseEnvironmentCard(actionIterator, table, player1, player2, output);
+                    case "getCardAtPosition" -> errorCatchGetCardAtPosition(actionIterator, table, output);
                     case "endPlayerTurn" -> {
                         countEndTurns++;
-                        drewCardAlready = false;
                         // change what player is doing actions when a turn ends
-                        changeCurrentPlayer(table);
+                        table.changeCurrentlyPlaying();
                     }
                     default -> output.add("No command with the given name!");
                 }
@@ -67,37 +77,270 @@ public class PlayGame {
             player2 = saved.getPlayer2();
         }
     }
-
-    public void placeCard(Actions action, Table table, Game game, Player player1, Player player2)
+    public void errorCatchGetCardAtPosition(Actions action, Table table, ArrayNode output)
     {
-        if(table.getCurrentlyPlaying() == 1)
-        {
-            placeCardGeneral(action, table, player1);
+        ObjectNode res = getCardAtPosition(action, table);
+        if(res != null) {
+            ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
+            nodeFinal.put("command", action.getCommand());
+            nodeFinal.replace("output", res);
+            output.add(nodeFinal);
         }
-
-        if(table.getCurrentlyPlaying() == 2)
-        {
-            placeCardGeneral(action, table, player2);
-        }
+        else
+            output.add("No card at that position.");
     }
+    public ObjectNode getCardAtPosition(Actions action, Table table)
+    {
+        if(table.getMatrix()[action.getX()][action.getY()] == null)
+            return null;
+        return cardToObjectNode(table.getMatrix()[action.getX()][action.getY()]);
+    }
+    public void errorCatchUseEnvironmentCard(Actions action, Table table, Player player1, Player player2, ArrayNode output)
+    {
+        int resultCode = useEnvironmentCard(action, table, player1, player2);
+        if(resultCode == -1)
+            output.add("Cannot steal enemy card since the player's row is full.");
+        if(resultCode == -2)
+            output.add("Chosen card is not of type environment.");
+        if(resultCode == -3)
+            output.add("Not enough mana to use environment card.");
+        if(resultCode == -4)
+            output.add("Chosen row does not belong to the enemy.");
 
-    private void placeCardGeneral(Actions action, Table table, Player player) {
-        for(int i = 0; i < 5; i++)
-        {
-            if(table.getMatrix()[0][i] == null) {
-                table.getMatrix()[0][i] = player.getHand().get(action.getHandIdx());
-                player.getHand().remove(action.getHandIdx());
-                break;
+    }
+    public void unfreezeCards(Table table)
+    {
+        for(int row = 0; row < 4; row++)
+            for(int column = 0; column < 5; column++)
+                if(table.getMatrix()[row][column] != null)
+                    if(table.getMatrix()[row][column].cardIsFrozen())
+                        table.getMatrix()[row][column].unfreezeCard();
+    }
+    public int  useEnvironmentCard(Actions action, Table table, Player player1, Player player2){
+        int result = 0;
+        if(table.getCurrentlyPlaying() == 1) {
+            // chosen row does not belong to the enemy.
+            if(action.getAffectedRow() != 0 && action.getAffectedRow() != 1)
+                return -4;
+            result = useEnvironmentCardEachPlayer(action, table, player1);
+        }
+        if(table.getCurrentlyPlaying() == 2) {
+            // chosen row does not belong to the enemy.
+            if(action.getAffectedRow() != 2 && action.getAffectedRow() != 3)
+                return -4;
+            result = useEnvironmentCardEachPlayer(action, table, player2);
+        }
+
+        // delete cards which are dead from table
+        for(int column = 0; column < 5; column++)
+            if(table.getMatrix()[action.getAffectedRow()][column] != null)
+                if(table.getMatrix()[action.getAffectedRow()][column].getHealth() == 0)
+                    deleteCardFromTable(table, action.getAffectedRow(), column);
+        // eliminate used environment card from player hand and decrease mana
+        if(table.getCurrentlyPlaying() == 1) {
+            player1.setCurrentMana(player1.getCurrentMana() - player1.getHand().get(action.getHandIdx()).getMana());
+            player1.getHand().remove(action.getHandIdx());
+        }
+        if(table.getCurrentlyPlaying() == 2) {
+            player2.setCurrentMana(player2.getCurrentMana() - player2.getHand().get(action.getHandIdx()).getMana());
+            player2.getHand().remove(action.getHandIdx());
+        }
+        return result;
+    }
+    public void deleteCardFromTable(Table table, int row, int column){
+        // card died and has to be deleted from the table
+        table.getMatrix()[row][column] = null;
+    }
+    public int useEnvironmentCardEachPlayer(Actions action, Table table, Player player){
+        // check card type and implement special methods
+        Card card = player.getHand().get(action.getHandIdx());
+
+        // not enough mana to use environment card.
+        if(player.getCurrentMana() < card.getMana())
+            return -3;
+
+        if(card.getName().equals("Firestorm"))
+            ((Firestorm)card).deploy(table, action.getAffectedRow());
+        else if(card.getName().equals("Winterfell"))
+            ((Winterfell)card).deploy(table, action.getAffectedRow());
+        else if(card.getName().equals("Heart Hound")){
+            int check = ((HeartHound)card).deploy(table, action.getAffectedRow());
+            // error case for not being able to steal a card
+            if(check == -1)
+                // cannot steal enemy card since the player's row is full.
+                return -1;
+        }
+        else {
+            // chosen card is not of type environment.
+            return -2;
+        }
+        return 1;
+    }
+    public ObjectNode getEnvironmentCardsInHand(Actions action, Player player1, Player player2){
+        ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
+        nodeFinal.put("command", action.getCommand());
+        nodeFinal.put("playerIdx", action.getPlayerIdx());
+
+        if(action.getPlayerIdx() == 1) {
+            ArrayNode handNode = environmentCardsInHandToObjectNode(player1.getHand());
+            nodeFinal.replace("output", handNode);
+        }
+        if(action.getPlayerIdx() == 2) {
+            ArrayNode deckNode = environmentCardsInHandToObjectNode(player2.getHand());
+            nodeFinal.replace("output", deckNode);
+        }
+
+        return nodeFinal;
+    }
+    public ArrayNode environmentCardsInHandToObjectNode(ArrayList<Card> hand){
+        ArrayNode handNode = JsonNodeFactory.instance.arrayNode();
+        for (Card card : hand) {
+            if(card.cardIsEnvironmentCard()) {
+                ObjectNode cardNode = cardToObjectNode(card);
+                handNode.add(cardNode);
             }
         }
+        return handNode;
     }
+    public ObjectNode getCardsOnTable(Actions action, Table table){
+        ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
 
-    public void changeCurrentPlayer(Table table)
+        nodeFinal.put("command", action.getCommand());
+
+        ArrayNode rowsNode = JsonNodeFactory.instance.arrayNode();
+        for(int row = 0; row < 4; row++)
+        {
+            ArrayNode rowNode = JsonNodeFactory.instance.arrayNode();
+            for (int column = 0; column < 5; column++) {
+                if(table.getMatrix()[row][column] != null) {
+                    ObjectNode cardNode = cardToObjectNode(table.getMatrix()[row][column]);
+                    rowNode.add(cardNode);
+                }
+            }
+            rowsNode.add(rowNode);
+        }
+
+        nodeFinal.replace("output", rowsNode);
+
+        return nodeFinal;
+    }
+    public ObjectNode getPlayerMana(Actions action, Player player1, Player player2, Table table){
+        // Create output node
+        ObjectNode nodeOutput = JsonNodeFactory.instance.objectNode();
+        nodeOutput.put("command", action.getCommand());
+        if(action.getPlayerIdx() == 1)
+            nodeOutput.put("output", player1.getCurrentMana());
+        if(action.getPlayerIdx() == 2)
+            nodeOutput.put("output", player2.getCurrentMana());
+        nodeOutput.put("playerIdx", action.getPlayerIdx());
+
+        return nodeOutput;
+    }
+    public void debug(Actions action, Table table, Player player1, Player player2)
+    {
+        System.out.println("Player1 mana is:   " + player1.getCurrentMana());
+        System.out.println("Player2 mana is:   " + player2.getCurrentMana());
+        System.out.println("Player currently doing action:    " + table.getCurrentlyPlaying());
+        System.out.println("Action done is:    " + action.getCommand());
+        System.out.println();
+    }
+    public void placeCard(Actions action, Table table, Player player1, Player player2, ArrayNode output)
     {
         if(table.getCurrentlyPlaying() == 1)
-            table.setCurrentlyPlaying(2);
+        {
+            if(placeCardIsError(action, player1, output))
+                return;
+            // place card
+            placeCardGeneral(action, table, player1, output);
+        }
+
         if(table.getCurrentlyPlaying() == 2)
-            table.setCurrentlyPlaying(1);
+        {
+            if(placeCardIsError(action, player2, output))
+                return;
+            // place card
+            placeCardGeneral(action, table, player2, output);
+        }
+    }
+    public boolean placeCardIsError(Actions action, Player player, ArrayNode output)
+    {
+        if(player.getHand().get(action.getHandIdx()).cardIsEnvironmentCard()) {
+            output.add(createPlaceCardErrorFormat(action, "Cannot place environment card on table."));
+            return true;
+        }
+        if(player.getHand().get(action.getHandIdx()).getMana() > player.getCurrentMana()) {
+            output.add(createPlaceCardErrorFormat(action, "Not enough mana to place card on table."));
+            return true;
+        }
+        return false;
+    }
+    private int isFirstRowCardOrSecondRowCard(Card card)
+    {
+        // 1 -> firstRow   2 -> secondRow
+        if(card.getName().equals("The Ripper") || card.getName().equals("Miraj") ||
+                card.getName().equals("Goliath") || card.getName().equals("Warden"))
+            return 2;
+        if(card.getName().equals("Sentinel") || card.getName().equals("Berserker") ||
+                card.getName().equals("The Cursed One") || card.getName().equals("Disciple"))
+            return 1;
+        return 0;
+    }
+    private void placeCardGeneral(Actions action, Table table, Player player, ArrayNode output) {
+        boolean placedCard = false;
+        // save mana cost of the card in case we need to decrease mana player after bypassing all error cases
+        int manaCost = player.getHand().get(action.getHandIdx()).getMana();
+        for(int i = 0; i < 5; i++)
+        {
+            // Place on first row
+            if(isFirstRowCardOrSecondRowCard(player.getHand().get(action.getHandIdx())) == 1) {
+                if (table.getCurrentlyPlaying() == 1)
+                    if (table.getMatrix()[3][i] == null) {
+                        table.getMatrix()[3][i] = player.getHand().get(action.getHandIdx());
+                        player.getHand().remove(action.getHandIdx());
+                        placedCard = true;
+                        break;
+                    }
+                if (table.getCurrentlyPlaying() == 2)
+                    if (table.getMatrix()[0][i] == null) {
+                        table.getMatrix()[0][i] = player.getHand().get(action.getHandIdx());
+                        player.getHand().remove(action.getHandIdx());
+                        placedCard = true;
+                        break;
+                    }
+            }
+            // Place on second row
+            if (isFirstRowCardOrSecondRowCard(player.getHand().get(action.getHandIdx())) == 2) {
+                if(table.getCurrentlyPlaying() == 1)
+                    if (table.getMatrix()[2][i] == null) {
+                        table.getMatrix()[2][i] = player.getHand().get(action.getHandIdx());
+                        player.getHand().remove(action.getHandIdx());
+                        placedCard = true;
+                        break;
+                    }
+                if(table.getCurrentlyPlaying() == 2)
+                    if (table.getMatrix()[1][i] == null) {
+                        table.getMatrix()[1][i] = player.getHand().get(action.getHandIdx());
+                        player.getHand().remove(action.getHandIdx());
+                        placedCard = true;
+                        break;
+                    }
+            }
+        }
+        if(!placedCard)
+            output.add(createPlaceCardErrorFormat(action,"Cannot place card on table since row is full."));
+        else {
+            // decrease mana by the cost of the card because we bypassed all error cases
+            player.setCurrentMana(player.getCurrentMana() - manaCost);
+        }
+
+    }
+    public ObjectNode createPlaceCardErrorFormat(Actions action, String error)
+    {
+        ObjectNode nodeOutput = JsonNodeFactory.instance.objectNode();
+        nodeOutput.put("command", action.getCommand());
+        nodeOutput.put("handIdx", action.getHandIdx());
+        nodeOutput.put("error", error);
+        return nodeOutput;
     }
     public ObjectNode getCardsInHand(Player player1, Player player2, Actions action)
     {
@@ -193,12 +436,12 @@ public class PlayGame {
         return nodeOutput;
     }
 
-    public ObjectNode getPlayerTurn(Actions action, Game game){
+    public ObjectNode getPlayerTurn(Actions action, Table table){
 
         // Create output node
         ObjectNode nodeOutput = JsonNodeFactory.instance.objectNode();
         nodeOutput.put("command", action.getCommand());
-        nodeOutput.put("output", game.getStartGame().getStartingPlayer());
+        nodeOutput.put("output", table.getCurrentlyPlaying());
         return nodeOutput;
     }
     public void drawCardsAndIncreaseMana(Player player1, Player player2, Game game, int manaIncrease){
@@ -213,10 +456,11 @@ public class PlayGame {
                 player2.getDecks().get(game.getStartGame().getPlayerTwoDeckIdx()).getCards().remove(0);
             }
         // increase mana at start of the round when players draw cards
+        if(manaIncrease > 10)
+            manaIncrease = 10;
         player1.setCurrentMana(player1.getCurrentMana() + manaIncrease);
         player2.setCurrentMana(player2.getCurrentMana() + manaIncrease);
     }
-
     public ObjectNode heroCardToObjectNode(Card card) {
         ObjectNode nodeCard = JsonNodeFactory.instance.objectNode();
 
@@ -249,6 +493,4 @@ public class PlayGame {
 
         return nodeFinal;
     }
-
-
 }

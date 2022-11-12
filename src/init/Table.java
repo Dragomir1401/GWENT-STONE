@@ -15,6 +15,15 @@ public class Table {
         this.currentlyPlaying = currentlyPlaying;
     }
 
+    public void changeCurrentlyPlaying(){
+        if(currentlyPlaying == 1) {
+            currentlyPlaying = 2;
+            return;
+        }
+        if(currentlyPlaying == 2)
+            currentlyPlaying = 1;
+    }
+
     public Card[][] getMatrix() {
         return matrix;
     }

@@ -1,6 +1,7 @@
 package Cards;
 
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -15,9 +16,12 @@ public class Firestorm extends Card {
                 card.getName());
     }
 
-    void deploy() {
+    public void deploy(Table table, int affectedRow) {
         /**
          * -1 health to all minions on a row
          */
+        for(int column = 0; column < 5; column++)
+            if(table.getMatrix()[affectedRow][column] != null)
+                table.getMatrix()[affectedRow][column].setHealth(table.getMatrix()[affectedRow][column].getHealth() - 1);
     }
 }

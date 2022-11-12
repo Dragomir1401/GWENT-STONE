@@ -9,6 +9,7 @@ public class Card {
     private String description;
     private ArrayList<String> colors;
     private String name;
+    private boolean isFrozen;
 
     public Card(){
         this.mana = 0;
@@ -17,6 +18,7 @@ public class Card {
         this.description = "NO DESCRIPTION";
         this.colors = new ArrayList<String>();
         this.name = "NO NAME";
+        this.isFrozen = false;
     }
 
     public Card(int mana, int attackDamage, int health, String description, ArrayList<String> colors, String name) {
@@ -26,6 +28,7 @@ public class Card {
         this.description = description;
         this.colors = colors;
         this.name = name;
+        this.isFrozen = false;
     }
 
     @Override
@@ -49,6 +52,18 @@ public class Card {
         if(name.equals("Heart Hound"))
             return true;
         return false;
+    }
+
+    public boolean cardIsFrozen()
+    {
+        return this.isFrozen;
+    }
+    public void freezeCard(){
+        this.isFrozen = true;
+    }
+
+    public void unfreezeCard(){
+        this.isFrozen = false;
     }
 
     public int getMana() {

@@ -40,54 +40,18 @@ public class Start {
             Deck my_deck = new Deck();
             for (CardInput card : deck) {
                 switch (card.getName()) {
-
-                    case "Sentinel":
-                        my_deck.getCards().add(new Sentinel(card));
-                        break;
-
-                    case "Berserker":
-                        my_deck.getCards().add(new Berserker(card));
-                        break;
-
-                    case "Goliath":
-                        my_deck.getCards().add(new Goliath(card));
-                        break;
-
-                    case "Warden":
-                        my_deck.getCards().add(new Warden(card));
-                        break;
-
-                    case "Miraj":
-                        my_deck.getCards().add(new Miraj(card));
-                        break;
-
-                    case "The Ripper":
-                        my_deck.getCards().add(new TheRipper(card));
-                        break;
-
-                    case "Disciple":
-                        my_deck.getCards().add(new Disciple(card));
-                        break;
-
-                    case "The Cursed One":
-                        my_deck.getCards().add(new TheCursedOne(card));
-                        break;
-
-                    case "Firestorm":
-                        my_deck.getCards().add(new Firestorm(card));
-                        break;
-
-                    case "Winterfell":
-                        my_deck.getCards().add(new Winterfell(card));
-                        break;
-
-                    case "Heart Hound":
-                        my_deck.getCards().add(new HeartHound(card));
-                        break;
-
-                    default:
-                        System.out.println("No card with the given name!");
-                        break;
+                    case "Sentinel" -> my_deck.getCards().add(new Sentinel(card));
+                    case "Berserker" -> my_deck.getCards().add(new Berserker(card));
+                    case "Goliath" -> my_deck.getCards().add(new Goliath(card));
+                    case "Warden" -> my_deck.getCards().add(new Warden(card));
+                    case "Miraj" -> my_deck.getCards().add(new Miraj(card));
+                    case "The Ripper" -> my_deck.getCards().add(new TheRipper(card));
+                    case "Disciple" -> my_deck.getCards().add(new Disciple(card));
+                    case "The Cursed One" -> my_deck.getCards().add(new TheCursedOne(card));
+                    case "Firestorm" -> my_deck.getCards().add(new Firestorm(card));
+                    case "Winterfell" -> my_deck.getCards().add(new Winterfell(card));
+                    case "Heart Hound" -> my_deck.getCards().add(new HeartHound(card));
+                    default -> System.out.println("No card with the given name!");
                 }
 
             }
@@ -130,50 +94,26 @@ public class Start {
             Card hero1;
             Card hero2;
             // Select the first player hero
-            switch (game_parser.getStartGame().getPlayerOneHero().getName()){
-                case "Lord Royce":
-                    hero1 = new LordRoyce(game_parser.getStartGame().getPlayerOneHero());
-                    break;
-
-                case "Empress Thorina":
-                    hero1 = new EmpressThorina(game_parser.getStartGame().getPlayerOneHero());
-                    break;
-
-                case "King Mudface":
-                    hero1 = new KingMudface(game_parser.getStartGame().getPlayerOneHero());
-                    break;
-
-                case "General Kocioraw":
-                    hero1 = new GeneralKocioraw(game_parser.getStartGame().getPlayerOneHero());
-                    break;
-
-                default:
+            switch (game_parser.getStartGame().getPlayerOneHero().getName()) {
+                case "Lord Royce" -> hero1 = new LordRoyce(game_parser.getStartGame().getPlayerOneHero());
+                case "Empress Thorina" -> hero1 = new EmpressThorina(game_parser.getStartGame().getPlayerOneHero());
+                case "King Mudface" -> hero1 = new KingMudface(game_parser.getStartGame().getPlayerOneHero());
+                case "General Kocioraw" -> hero1 = new GeneralKocioraw(game_parser.getStartGame().getPlayerOneHero());
+                default -> {
                     hero1 = new Card();
                     System.out.println("No hero with the given name!");
-                    break;
+                }
             }
             // Select the second player hero
-            switch (game_parser.getStartGame().getPlayerTwoHero().getName()){
-                case "Lord Royce":
-                    hero2 = new LordRoyce(game_parser.getStartGame().getPlayerTwoHero());
-                    break;
-
-                case "Empress Thorina":
-                    hero2 = new EmpressThorina(game_parser.getStartGame().getPlayerTwoHero());
-                    break;
-
-                case "King Mudface":
-                    hero2 = new KingMudface(game_parser.getStartGame().getPlayerTwoHero());
-                    break;
-
-                case "General Kocioraw":
-                    hero2 = new GeneralKocioraw(game_parser.getStartGame().getPlayerTwoHero());
-                    break;
-
-                default:
+            switch (game_parser.getStartGame().getPlayerTwoHero().getName()) {
+                case "Lord Royce" -> hero2 = new LordRoyce(game_parser.getStartGame().getPlayerTwoHero());
+                case "Empress Thorina" -> hero2 = new EmpressThorina(game_parser.getStartGame().getPlayerTwoHero());
+                case "King Mudface" -> hero2 = new KingMudface(game_parser.getStartGame().getPlayerTwoHero());
+                case "General Kocioraw" -> hero2 = new GeneralKocioraw(game_parser.getStartGame().getPlayerTwoHero());
+                default -> {
                     hero2 = new Card();
                     System.out.println("No hero with the given name!");
-                    break;
+                }
             }
 
             // Create the StartGame instance
