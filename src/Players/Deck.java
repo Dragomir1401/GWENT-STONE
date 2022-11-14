@@ -9,8 +9,8 @@ public class Deck {
     ArrayList<Cards.Card> cards;
 
     public Deck(){
-        this.number_of_cards = 0;
         this.cards = new ArrayList<>();
+        this.number_of_cards = 0;
     }
 
     public Deck(int number_of_cards, ArrayList<Card> cards) {

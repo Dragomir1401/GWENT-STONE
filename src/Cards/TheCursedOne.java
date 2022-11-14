@@ -17,6 +17,12 @@ public class TheCursedOne extends Card {
                 card.getName());
     }
 
+    public TheCursedOne(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
     /**
      * swap between life and attack on an enemy minion
      */

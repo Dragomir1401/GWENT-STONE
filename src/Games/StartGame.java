@@ -1,8 +1,9 @@
 package Games;
 
-import Cards.Card;
+import Cards.*;
 import fileio.CardInput;
 import fileio.StartGameInput;
+import init.Start;
 
 public class StartGame {
     private int playerOneDeckIdx;
@@ -29,6 +30,36 @@ public class StartGame {
         this.playerOneHero = playerOneHero;
         this.playerTwoHero = playerTwoHero;
         this.startingPlayer = startingPlayer;
+    }
+
+    public StartGame(StartGame startGame)
+    {
+        this.playerOneDeckIdx = startGame.getPlayerOneDeckIdx();
+        this.playerTwoDeckIdx = startGame.getPlayerTwoDeckIdx();
+        this.shuffleSeed = startGame.getShuffleSeed();
+        switch(startGame.getPlayerOneHero().getName())
+        {
+            case "Lord Royce" -> this.playerOneHero = new LordRoyce(startGame.getPlayerOneHero());
+            case "Empress Thorina" -> this.playerOneHero = new EmpressThorina(startGame.getPlayerOneHero());
+            case "King Mudface" -> this.playerOneHero = new KingMudface(startGame.getPlayerOneHero());
+            case "General Kocioraw" -> this.playerOneHero = new GeneralKocioraw(startGame.getPlayerOneHero());
+            default -> {
+                this.playerOneHero = new Card();
+                System.out.println("No hero with the given name!");
+            }
+        }
+        switch(startGame.getPlayerTwoHero().getName())
+        {
+            case "Lord Royce" -> this.playerTwoHero = new LordRoyce(startGame.getPlayerTwoHero());
+            case "Empress Thorina" -> this.playerTwoHero = new EmpressThorina(startGame.getPlayerTwoHero());
+            case "King Mudface" -> this.playerTwoHero = new KingMudface(startGame.getPlayerTwoHero());
+            case "General Kocioraw" -> this.playerTwoHero = new GeneralKocioraw(startGame.getPlayerTwoHero());
+            default -> {
+                this.playerTwoHero = new Card();
+                System.out.println("No hero with the given name!");
+            }
+        }
+        this.startingPlayer = startGame.getStartingPlayer();
     }
 
 

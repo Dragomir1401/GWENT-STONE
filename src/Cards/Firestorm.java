@@ -16,6 +16,12 @@ public class Firestorm extends Card {
                 card.getName());
     }
 
+    public Firestorm(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
     public void deploy(Table table, int affectedRow) {
         /**
          * -1 health to all minions on a row

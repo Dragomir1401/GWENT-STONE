@@ -1,7 +1,9 @@
 package Games;
 
+import Cards.Card;
 import fileio.Coordinates;
 
+import javax.accessibility.AccessibleRelation;
 import java.awt.font.TextHitInfo;
 
 public class Actions {
@@ -34,6 +36,17 @@ public class Actions {
         this.playerIdx = playerIdx;
         this.x = x;
         this.y = y;
+    }
+
+    public Actions(Actions action){
+        this.command = action.getCommand();
+        this.handIdx = action.getHandIdx();
+        this.cardAttacker = new CardCoordinates(action.getCardAttacker());
+        this.cardAttacked = new CardCoordinates(action.getCardAttacked());
+        this.affectedRow = action.getAffectedRow();
+        this.playerIdx = action.getPlayerIdx();
+        this.x = action.getX();
+        this.y = action.getY();
     }
 
     public String getCommand() {

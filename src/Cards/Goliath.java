@@ -14,4 +14,11 @@ public class Goliath extends Card {
         super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
                 card.getName());
     }
+
+    public Goliath(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
 }

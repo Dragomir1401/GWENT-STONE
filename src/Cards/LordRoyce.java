@@ -16,6 +16,12 @@ public class LordRoyce extends Card {
                 card.getName());
     }
 
+    public LordRoyce(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), 30, card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
     /**
      * freezes the highest attack enemy card on a row
      */
@@ -24,14 +30,16 @@ public class LordRoyce extends Card {
         // find max attack card on row
         int maxAttack = 0;
         for(int col = 0; col < 5; col++)
-            if(table.getMatrix()[affectedRow][col].getAttackDamage() > maxAttack)
-                maxAttack = table.getMatrix()[affectedRow][col].getAttackDamage();
+            if(table.getMatrix()[affectedRow][col] != null)
+                if(table.getMatrix()[affectedRow][col].getAttackDamage() > maxAttack)
+                    maxAttack = table.getMatrix()[affectedRow][col].getAttackDamage();
 
         // freeze the found card
         for(int col = 0; col < 5; col++)
-            if(maxAttack == table.getMatrix()[affectedRow][col].getAttackDamage()) {
-                table.getMatrix()[affectedRow][col].freezeCard();
-                break;
+            if(table.getMatrix()[affectedRow][col] != null)
+                if(maxAttack == table.getMatrix()[affectedRow][col].getAttackDamage()) {
+                    table.getMatrix()[affectedRow][col].freezeCard();
+                    break;
             }
     }
 }

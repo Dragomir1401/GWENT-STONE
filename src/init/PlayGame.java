@@ -17,24 +17,19 @@ import java.util.Random;
 
 public class PlayGame {
     public void playGame(ArrayList<Game> games, Player player1, Player player2, ArrayNode output) {
-        /*
-          actual play game scenario
-         */
+        // actual play game scenario
 
+        // save pre game environment
+        PreGame saved = new PreGame(player1, player2);
+        // the playing table gets initialised and tracks what player is currently capable of placing cards
+        Table table = new Table();
         // iterate through every game played
         for (Game gameIterator : games) {
             // prepare game environment
             prepareGame(gameIterator, player1, player2);
-            // save pre game environment
-            PreGame saved = new PreGame(games, player1, player2);
-
-            /*
-              Local variables to track rounds
-             */
+            // local variables to track rounds
             int countEndTurns = 0;
             int roundNumber = 1;
-            // the playing table gets initialised and tracks what player is currently capable of placing cards
-            Table table = new Table();
 
             // Draw cards and set the current player
             drawCardsAndIncreaseMana(player1, player2, gameIterator, roundNumber);
@@ -48,7 +43,7 @@ public class PlayGame {
                     drawCardsAndIncreaseMana(player1, player2, gameIterator, roundNumber);
                     countEndTurns = 0;
                 }
-                debug(actionIterator, table, player1, player2);
+                debug(actionIterator, table, player1, player2, gameIterator);
 
                 switch (actionIterator.getCommand()) {
                     case "getPlayerDeck" -> output.add(getPlayerDeck(actionIterator, gameIterator, player1, player2));
@@ -64,8 +59,11 @@ public class PlayGame {
                     case "getFrozenCardsOnTable" -> output.add(getFrozenCardsOnTable(table, actionIterator));
                     case "cardUsesAttack" -> cardUsesAttack(table, actionIterator, output);
                     case "cardUsesAbility" -> cardUsesAbility(table, actionIterator, output);
-                    case "useAttackHero" -> heroIsDead = checkHeroDeath(table, actionIterator, output, gameIterator);
+                    case "useAttackHero" -> heroIsDead = checkHeroDeath(table, actionIterator, output, gameIterator, player1, player2);
                     case "useHeroAbility" -> useHeroAbility(table, actionIterator, gameIterator, output, player1, player2);
+                    case "getTotalGamesPlayed" -> getTotalGamesPlayed(output, player1, player2, actionIterator);
+                    case "getPlayerOneWins" -> getPlayerOneWins(output, player1, actionIterator);
+                    case "getPlayerTwoWins" -> getPlayerTwoWins(output, player2, actionIterator);
                     case "endPlayerTurn" -> {
                         if (!heroIsDead) {
                             countEndTurns++;
@@ -73,17 +71,42 @@ public class PlayGame {
                             table.changeCurrentlyPlaying();
                             // unfreeze all frozen current player cards and reset attack status
                             unfreezePlayerCards(table);
-                            resetAttackStatus(table);
+                            resetAttackStatus(table, gameIterator);
                         }
                     }
                     default -> output.add("No command with the given name!");
                 }
             }
             /* Go back to before game start scenario */
-            games = saved.getGames();
-            player1 = saved.getPlayer1();
-            player2 = saved.getPlayer2();
+            int player1Wins = player1.getNumberOfWins();
+            int player2Wins = player2.getNumberOfWins();
+            player1 = new Player(saved.getPlayer1());
+            player2 = new Player(saved.getPlayer2());
+            player1.setNumberOfWins(player1Wins);
+            player2.setNumberOfWins(player2Wins);
+            table = new Table();
         }
+    }
+    public void getPlayerOneWins(ArrayNode output, Player player1, Actions action)
+    {
+        ObjectNode resNode = JsonNodeFactory.instance.objectNode();
+        resNode.put("command", action.getCommand());
+        resNode.put("output", player1.getNumberOfWins());
+        output.add(resNode);
+    }
+    public void getPlayerTwoWins(ArrayNode output, Player player2, Actions action)
+    {
+        ObjectNode resNode = JsonNodeFactory.instance.objectNode();
+        resNode.put("command", action.getCommand());
+        resNode.put("output", player2.getNumberOfWins());
+        output.add(resNode);
+    }
+    public void getTotalGamesPlayed(ArrayNode output, Player player1, Player player2, Actions action)
+    {
+        ObjectNode resNode = JsonNodeFactory.instance.objectNode();
+        resNode.put("command", action.getCommand());
+        resNode.put("output", player1.getNumberOfWins() + player2.getNumberOfWins());
+        output.add(resNode);
     }
     public void useHeroAbility(Table table, Actions action, Game game,ArrayNode output, Player player1, Player player2)
     {
@@ -91,7 +114,6 @@ public class PlayGame {
             useHeroAbilityEachPlayer(table, action, game.getStartGame().getPlayerOneHero(), output, player1);
         if(table.getCurrentlyPlaying() == 2)
             useHeroAbilityEachPlayer(table, action, game.getStartGame().getPlayerTwoHero(), output, player2);
-
     }
     public void useHeroAbilityEachPlayer(Table table, Actions action, Card hero, ArrayNode output, Player player) {
         // not enough mana error
@@ -112,13 +134,13 @@ public class PlayGame {
         if(hero.getName().equals("Lord Royce") || hero.getName().equals("Empress Thorina"))
         {
             if(table.getCurrentlyPlaying() == 1)
-                if(action.getAffectedRow() != 0 || action.getAffectedRow() != 1)
+                if(action.getAffectedRow() != 0 && action.getAffectedRow() != 1)
                 {
                     catchErrorHeroAbility(action, output, "Selected row does not belong to the enemy.");
                     return;
                 }
             if(table.getCurrentlyPlaying() == 2)
-                if(action.getAffectedRow() != 2 || action.getAffectedRow() != 3)
+                if(action.getAffectedRow() != 2 && action.getAffectedRow() != 3)
                 {
                     catchErrorHeroAbility(action, output, "Selected row does not belong to the enemy.");
                     return;
@@ -128,13 +150,13 @@ public class PlayGame {
         if(hero.getName().equals("General Kocioraw") || hero.getName().equals("King Mudface"))
         {
             if(table.getCurrentlyPlaying() == 1)
-                if(action.getAffectedRow() != 2 || action.getAffectedRow() != 3)
+                if(action.getAffectedRow() != 2 && action.getAffectedRow() != 3)
                 {
                     catchErrorHeroAbility(action, output, "Selected row does not belong to the current player.");
                     return;
                 }
             if(table.getCurrentlyPlaying() == 2)
-                if(action.getAffectedRow() != 0 || action.getAffectedRow() != 1)
+                if(action.getAffectedRow() != 0 && action.getAffectedRow() != 1)
                 {
                     catchErrorHeroAbility(action, output, "Selected row does not belong to the current player.");
                     return;
@@ -152,6 +174,8 @@ public class PlayGame {
 
         // mark hero as used for that round
         hero.setHasAttackedThisRound(true);
+        // decrease player mana
+        player.setCurrentMana(player.getCurrentMana() - hero.getMana());
     }
     public void catchErrorHeroAbility(Actions action, ArrayNode output, String error){
         ObjectNode errorNode = JsonNodeFactory.instance.objectNode();
@@ -160,20 +184,25 @@ public class PlayGame {
         errorNode.put("error", error);
         output.add(errorNode);
     }
-    public boolean checkHeroDeath(Table table, Actions actions, ArrayNode output, Game game)
+    public boolean checkHeroDeath(Table table, Actions actions, ArrayNode output, Game game, Player player1, Player player2)
     {
         int resCode = useAttackHero(table, actions, output, game);
         if(resCode == -1)
         {
             ObjectNode endGameNode = JsonNodeFactory.instance.objectNode();
-            if(table.getCurrentlyPlaying() == 1)
-                 endGameNode.put("gameEnded", "Player one killed the enemy hero.");
-            if(table.getCurrentlyPlaying() == 2)
+            if(table.getCurrentlyPlaying() == 1) {
+                endGameNode.put("gameEnded", "Player one killed the enemy hero.");
+                player1.winGame();
+            }
+            if(table.getCurrentlyPlaying() == 2) {
                 endGameNode.put("gameEnded", "Player two killed the enemy hero.");
+                player2.winGame();
+            }
             output.add(endGameNode);
             return true;
         }
-        else return false;
+        else
+            return false;
     }
     public int useAttackHero(Table table, Actions action, ArrayNode output, Game game){
         // frozen card error
@@ -501,7 +530,7 @@ public class PlayGame {
             output.add(nodeFinal);
         }
     }
-    public void resetAttackStatus(Table table)
+    public void resetAttackStatus(Table table, Game game)
     {
         for(int row = 0; row < 4; row++)
             for(int column = 0; column < 5; column++)
@@ -509,6 +538,8 @@ public class PlayGame {
                     if(table.getMatrix()[row][column].getHasAttackedThisRound())
                         table.getMatrix()[row][column].setHasAttackedThisRound(false);
                 }
+        game.getStartGame().getPlayerOneHero().setHasAttackedThisRound(false);
+        game.getStartGame().getPlayerTwoHero().setHasAttackedThisRound(false);
     }
     public int  useEnvironmentCard(Actions action, Table table, Player player1, Player player2){
         int resultCode = 0;
@@ -646,7 +677,7 @@ public class PlayGame {
 
         return nodeOutput;
     }
-    public void debug(Actions action, Table table, Player player1, Player player2)
+    public void debug(Actions action, Table table, Player player1, Player player2, Game game)
     {
 //        System.out.println("Player1 mana is:   " + player1.getCurrentMana());
 //        System.out.println("Player2 mana is:   " + player2.getCurrentMana());
@@ -660,10 +691,23 @@ public class PlayGame {
         System.out.println("---------TABLE----------");
         System.out.println();
 
+        if(action.getCommand().equals("useHeroAbility") && table.getCurrentlyPlaying() == 1)
+            System.out.println("HERO USED IS " + game.getStartGame().getPlayerOneHero().getName());
+        if(action.getCommand().equals("useHeroAbility") && table.getCurrentlyPlaying() == 2)
+            System.out.println("HERO USED IS " + game.getStartGame().getPlayerTwoHero().getName() + " ON ROW " + action.getAffectedRow());
+
+        if(action.getCommand().equals("cardUsesAbility"))
+            System.out.println(" CARD IS " + table.getMatrix()[action.getCardAttacker().getX()][action.getCardAttacker().getY()].getName()
+            + " ON CARD : x = " + action.getCardAttacked().getX() + " ; y = " + action.getCardAttacked().getY());
+
+        if(action.getCommand().equals("cardUsesAttack"))
+            System.out.println(" CARD IS " + table.getMatrix()[action.getCardAttacker().getX()][action.getCardAttacker().getY()].getName()
+                    + " ATTACK ON CARD : x = " + action.getCardAttacked().getX() + " ; y = " + action.getCardAttacked().getY());
+
         for(int i = 0; i < 4; i++) {
             for (int j = 0; j < 5; j++)
                 if(table.getMatrix()[i][j] != null)
-                    System.out.println(table.getMatrix()[i][j].getName() + " is frozen: " + table.getMatrix()[i][j].isFrozen());
+                    System.out.println(table.getMatrix()[i][j].getName() + " with health: " + table.getMatrix()[i][j].getHealth());
             else
                 System.out.println("NULL");
             System.out.println();
@@ -792,7 +836,6 @@ public class PlayGame {
                 new Random(game.getStartGame().getShuffleSeed()));
 
         // Create player hands
-
         player1.setHand(new ArrayList<Card>());
         player2.setHand(new ArrayList<Card>());
 

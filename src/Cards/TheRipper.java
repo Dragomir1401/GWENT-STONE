@@ -17,6 +17,12 @@ public class TheRipper extends Card {
                 card.getName());
     }
 
+    public TheRipper(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
     /**
      * -2 attack for one minion in the enemy deck
      */

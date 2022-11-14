@@ -14,5 +14,11 @@ public class Warden extends Card{
         super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
                 card.getName());
     }
+
+    public Warden(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
 }
 

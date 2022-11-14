@@ -17,6 +17,11 @@ public class Miraj extends Card {
                 card.getName());
     }
 
+    public Miraj(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
     /**
      * swap between his life and one minion life in the enemy deck
      */

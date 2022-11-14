@@ -16,6 +16,12 @@ public class Winterfell extends Card{
                 card.getName());
     }
 
+    public Winterfell(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
     public void deploy(Table table, int affectedRow){
         /**
          * all enemy cards skip a round

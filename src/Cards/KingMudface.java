@@ -15,12 +15,19 @@ public class KingMudface extends Card{
                 card.getName());
     }
 
+    public KingMudface(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), 30, card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
     /**
      * +1 health for all cards on a row
      */
     public void earthBorn(Table table, int affectedRow){
         for(int col = 0; col < 5; col++)
-            table.getMatrix()[affectedRow][col].setHealth(table.getMatrix()[affectedRow][col].getHealth() + 1);
+            if(table.getMatrix()[affectedRow][col] != null)
+                table.getMatrix()[affectedRow][col].setHealth(table.getMatrix()[affectedRow][col].getHealth() + 1);
     }
 
 }

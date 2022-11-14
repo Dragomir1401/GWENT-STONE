@@ -16,6 +16,12 @@ public class HeartHound extends Card {
                 card.getName());
     }
 
+    public HeartHound(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
+
     public int deploy(Table table, int affectedRow) {
         /**
          * steal the highest health enemy minion and put it on your side

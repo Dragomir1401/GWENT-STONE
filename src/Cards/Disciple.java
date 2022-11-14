@@ -15,6 +15,11 @@ public class Disciple extends Card {
         super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(), card.getName());
     }
 
+    public Disciple(Card card) {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(), card.getName());
+    }
+
+
     /**
      * +2 health to a friendly minion
      */

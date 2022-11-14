@@ -14,4 +14,10 @@ public class Berserker extends Card {
         super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
                 card.getName());
     }
+
+    public Berserker(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
 }

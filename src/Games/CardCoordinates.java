@@ -15,6 +15,12 @@ public class CardCoordinates {
         this.y = y;
     }
 
+    public CardCoordinates(CardCoordinates cardCoordinates)
+    {
+        this.x = cardCoordinates.getX();
+        this.y = cardCoordinates.getY();
+    }
+
     public int getX() {
         return x;
     }

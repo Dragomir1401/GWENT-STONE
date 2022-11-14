@@ -14,4 +14,10 @@ public class Sentinel extends Card {
         super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
                 card.getName());
     }
+
+    public Sentinel(Card card)
+    {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
+                card.getName());
+    }
 }

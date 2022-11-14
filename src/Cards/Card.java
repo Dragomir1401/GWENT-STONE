@@ -36,6 +36,18 @@ public class Card {
         this.hasAttackedThisRound = false;
     }
 
+    public Card(Card card)
+    {
+        this.mana = card.getMana();
+        this.attackDamage = card.getAttackDamage();
+        this.health = card.getHealth();
+        this.description = card.getDescription();
+        this.colors = card.getColors();
+        this.name = card.getName();
+        this.isFrozen = card.isFrozen;
+        this.hasAttackedThisRound = card.getHasAttackedThisRound();
+    }
+
     @Override
     public String toString() {
         return "Card{" +

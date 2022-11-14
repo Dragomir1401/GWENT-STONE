@@ -10,6 +10,11 @@ public class Table {
         this.currentlyPlaying = 0;
     }
 
+    public Table(Table table){
+        this.matrix = new Card[4][5];
+        this.currentlyPlaying = table.getCurrentlyPlaying();
+    }
+
     public Table(Card[][] matrix, int currentlyPlaying) {
         this.matrix = matrix;
         this.currentlyPlaying = currentlyPlaying;
