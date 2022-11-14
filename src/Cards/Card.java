@@ -1,5 +1,7 @@
 package Cards;
 
+import Games.CardCoordinates;
+
 import java.util.ArrayList;
 
 public class Card {
@@ -10,6 +12,7 @@ public class Card {
     private ArrayList<String> colors;
     private String name;
     private boolean isFrozen;
+    private boolean hasAttackedThisRound;
 
     public Card(){
         this.mana = 0;
@@ -19,6 +22,7 @@ public class Card {
         this.colors = new ArrayList<String>();
         this.name = "NO NAME";
         this.isFrozen = false;
+        this.hasAttackedThisRound = false;
     }
 
     public Card(int mana, int attackDamage, int health, String description, ArrayList<String> colors, String name) {
@@ -29,6 +33,7 @@ public class Card {
         this.colors = colors;
         this.name = name;
         this.isFrozen = false;
+        this.hasAttackedThisRound = false;
     }
 
     @Override
@@ -42,7 +47,6 @@ public class Card {
                 ", name='" + name + '\'' +
                 '}';
     }
-
     public boolean cardIsEnvironmentCard()
     {
         if(name.equals("Winterfell"))
@@ -50,6 +54,13 @@ public class Card {
         if(name.equals("Firestorm"))
             return true;
         if(name.equals("Heart Hound"))
+            return true;
+        return false;
+    }
+
+    public boolean cardIsTank()
+    {
+        if(name.equals("Goliath") || name.equals("Warden"))
             return true;
         return false;
     }
@@ -112,5 +123,21 @@ public class Card {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public boolean isFrozen() {
+        return isFrozen;
+    }
+
+    public void setFrozen(boolean frozen) {
+        isFrozen = frozen;
+    }
+
+    public boolean getHasAttackedThisRound() {
+        return hasAttackedThisRound;
+    }
+
+    public void setHasAttackedThisRound(boolean hasAttackedThisRound) {
+        this.hasAttackedThisRound = hasAttackedThisRound;
     }
 }

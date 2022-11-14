@@ -1,6 +1,8 @@
 package Cards;
 
+import Games.CardCoordinates;
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -18,7 +20,8 @@ public class TheRipper extends Card {
     /**
      * -2 attack for one minion in the enemy deck
      */
-    public void weak_kness() {
-
+    public void weakKnees(Table table, CardCoordinates attackedCard) {
+        if(table.getMatrix()[attackedCard.getX()][attackedCard.getY()].getAttackDamage() > 0)
+            table.getMatrix()[attackedCard.getX()][attackedCard.getY()].setAttackDamage(table.getMatrix()[attackedCard.getX()][attackedCard.getY()].getAttackDamage() - 2);
     }
 }

@@ -1,6 +1,7 @@
 package Cards;
 
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -18,8 +19,19 @@ public class LordRoyce extends Card {
     /**
      * freezes the highest attack enemy card on a row
      */
-    public void subzero()
+    public void subZero(Table table, int affectedRow)
     {
+        // find max attack card on row
+        int maxAttack = 0;
+        for(int col = 0; col < 5; col++)
+            if(table.getMatrix()[affectedRow][col].getAttackDamage() > maxAttack)
+                maxAttack = table.getMatrix()[affectedRow][col].getAttackDamage();
 
+        // freeze the found card
+        for(int col = 0; col < 5; col++)
+            if(maxAttack == table.getMatrix()[affectedRow][col].getAttackDamage()) {
+                table.getMatrix()[affectedRow][col].freezeCard();
+                break;
+            }
     }
 }

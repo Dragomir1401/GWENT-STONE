@@ -1,9 +1,6 @@
 package init;
 
-import Cards.Card;
-import Cards.Firestorm;
-import Cards.HeartHound;
-import Cards.Winterfell;
+import Cards.*;
 import Games.Actions;
 import Games.Game;
 import Players.Deck;
@@ -12,7 +9,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import javax.naming.ldap.PagedResultsControl;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Random;
 
@@ -40,13 +39,13 @@ public class PlayGame {
             // Draw cards and set the current player
             drawCardsAndIncreaseMana(player1, player2, gameIterator, roundNumber);
             table.setCurrentlyPlaying(gameIterator.getStartGame().getStartingPlayer());
-
+            // exit when the hero is dead
+            boolean heroIsDead = false;
             for (Actions actionIterator : gameIterator.getActions()) {
                 /* Draw cards when we reached 0 or 2 EndTurns meaning each player ended the current round */
                 if(countEndTurns == 2) {
                     roundNumber++;
                     drawCardsAndIncreaseMana(player1, player2, gameIterator, roundNumber);
-                    unfreezeCards(table);
                     countEndTurns = 0;
                 }
                 debug(actionIterator, table, player1, player2);
@@ -62,20 +61,399 @@ public class PlayGame {
                     case "getEnvironmentCardsInHand" -> output.add(getEnvironmentCardsInHand(actionIterator, player1, player2));
                     case "useEnvironmentCard" -> errorCatchUseEnvironmentCard(actionIterator, table, player1, player2, output);
                     case "getCardAtPosition" -> errorCatchGetCardAtPosition(actionIterator, table, output);
+                    case "getFrozenCardsOnTable" -> output.add(getFrozenCardsOnTable(table, actionIterator));
+                    case "cardUsesAttack" -> cardUsesAttack(table, actionIterator, output);
+                    case "cardUsesAbility" -> cardUsesAbility(table, actionIterator, output);
+                    case "useAttackHero" -> heroIsDead = checkHeroDeath(table, actionIterator, output, gameIterator);
+                    case "useHeroAbility" -> useHeroAbility(table, actionIterator, gameIterator, output, player1, player2);
                     case "endPlayerTurn" -> {
-                        countEndTurns++;
-                        // change what player is doing actions when a turn ends
-                        table.changeCurrentlyPlaying();
+                        if (!heroIsDead) {
+                            countEndTurns++;
+                            // change what player is doing actions when a turn ends
+                            table.changeCurrentlyPlaying();
+                            // unfreeze all frozen current player cards and reset attack status
+                            unfreezePlayerCards(table);
+                            resetAttackStatus(table);
+                        }
                     }
                     default -> output.add("No command with the given name!");
                 }
             }
-
             /* Go back to before game start scenario */
             games = saved.getGames();
             player1 = saved.getPlayer1();
             player2 = saved.getPlayer2();
         }
+    }
+    public void useHeroAbility(Table table, Actions action, Game game,ArrayNode output, Player player1, Player player2)
+    {
+        if(table.getCurrentlyPlaying() == 1)
+            useHeroAbilityEachPlayer(table, action, game.getStartGame().getPlayerOneHero(), output, player1);
+        if(table.getCurrentlyPlaying() == 2)
+            useHeroAbilityEachPlayer(table, action, game.getStartGame().getPlayerTwoHero(), output, player2);
+
+    }
+    public void useHeroAbilityEachPlayer(Table table, Actions action, Card hero, ArrayNode output, Player player) {
+        // not enough mana error
+        if(player.getCurrentMana() < hero.getMana())
+        {
+            catchErrorHeroAbility(action, output, "Not enough mana to use hero's ability.");
+            return;
+        }
+
+        // hero already attacked this turn error
+        if(hero.getHasAttackedThisRound())
+        {
+            catchErrorHeroAbility(action, output, "Hero has already attacked this turn.");
+            return;
+        }
+
+        // selected row does not belong to the enemy error
+        if(hero.getName().equals("Lord Royce") || hero.getName().equals("Empress Thorina"))
+        {
+            if(table.getCurrentlyPlaying() == 1)
+                if(action.getAffectedRow() != 0 || action.getAffectedRow() != 1)
+                {
+                    catchErrorHeroAbility(action, output, "Selected row does not belong to the enemy.");
+                    return;
+                }
+            if(table.getCurrentlyPlaying() == 2)
+                if(action.getAffectedRow() != 2 || action.getAffectedRow() != 3)
+                {
+                    catchErrorHeroAbility(action, output, "Selected row does not belong to the enemy.");
+                    return;
+                }
+        }
+        // selected row does not belong to the current player.
+        if(hero.getName().equals("General Kocioraw") || hero.getName().equals("King Mudface"))
+        {
+            if(table.getCurrentlyPlaying() == 1)
+                if(action.getAffectedRow() != 2 || action.getAffectedRow() != 3)
+                {
+                    catchErrorHeroAbility(action, output, "Selected row does not belong to the current player.");
+                    return;
+                }
+            if(table.getCurrentlyPlaying() == 2)
+                if(action.getAffectedRow() != 0 || action.getAffectedRow() != 1)
+                {
+                    catchErrorHeroAbility(action, output, "Selected row does not belong to the current player.");
+                    return;
+                }
+        }
+
+        // actual use of hero ability
+        switch (hero.getName()){
+            case "Lord Royce" -> ((LordRoyce)hero).subZero(table, action.getAffectedRow());
+            case "Empress Thorina" -> ((EmpressThorina)hero).lowBlow(table, action.getAffectedRow());
+            case "King Mudface" -> ((KingMudface)hero).earthBorn(table, action.getAffectedRow());
+            case "General Kocioraw" -> ((GeneralKocioraw)hero).bloodThirst(table, action.getAffectedRow());
+            default -> output.add("No card with the given name!");
+        }
+
+        // mark hero as used for that round
+        hero.setHasAttackedThisRound(true);
+    }
+    public void catchErrorHeroAbility(Actions action, ArrayNode output, String error){
+        ObjectNode errorNode = JsonNodeFactory.instance.objectNode();
+        errorNode.put("command", action.getCommand());
+        errorNode.put("affectedRow", action.getAffectedRow());
+        errorNode.put("error", error);
+        output.add(errorNode);
+    }
+    public boolean checkHeroDeath(Table table, Actions actions, ArrayNode output, Game game)
+    {
+        int resCode = useAttackHero(table, actions, output, game);
+        if(resCode == -1)
+        {
+            ObjectNode endGameNode = JsonNodeFactory.instance.objectNode();
+            if(table.getCurrentlyPlaying() == 1)
+                 endGameNode.put("gameEnded", "Player one killed the enemy hero.");
+            if(table.getCurrentlyPlaying() == 2)
+                endGameNode.put("gameEnded", "Player two killed the enemy hero.");
+            output.add(endGameNode);
+            return true;
+        }
+        else return false;
+    }
+    public int useAttackHero(Table table, Actions action, ArrayNode output, Game game){
+        // frozen card error
+        Card attackerCard = table.getMatrix()[action.getCardAttacker().getX()][action.getCardAttacker().getY()];
+
+        if(attackerCard == null)
+            return 1;
+
+        if(attackerCard.isFrozen()) {
+            catchErrorsAttack(action, output, "Attacker card is frozen.", true);
+            return 1;
+        }
+
+        // already attacked error
+        if(attackerCard.getHasAttackedThisRound())
+        {
+            catchErrorsAttack(action, output, "Attacker card has already attacked this turn.", true);
+            return 1;
+        }
+
+        // did not target an enemy tank if it exists on enemy rows case
+
+        // check if enemy has tanks on his side
+        boolean enemyRowHasTanks = false;
+        if (table.getCurrentlyPlaying() == 1)
+            for (int row = 0; row < 2; row++)
+                for (int col = 0; col < 5; col++)
+                    if (table.getMatrix()[row][col] != null)
+                        if (table.getMatrix()[row][col].cardIsTank())
+                            enemyRowHasTanks = true;
+        if (table.getCurrentlyPlaying() == 2)
+            for (int row = 2; row < 4; row++)
+                for (int col = 0; col < 5; col++)
+                    if (table.getMatrix()[row][col] != null)
+                        if (table.getMatrix()[row][col].cardIsTank())
+                            enemyRowHasTanks = true;
+        if (enemyRowHasTanks) {
+            catchErrorsAttack(action, output, "Attacked card is not of type 'Tank'.", true);
+            return 1;
+        }
+
+        if(table.getCurrentlyPlaying() == 2) {
+            Card playerOneHero = game.getStartGame().getPlayerOneHero();
+            playerOneHero.setHealth(playerOneHero.getHealth() - attackerCard.getAttackDamage());
+
+            // mark the card as used this round
+            attackerCard.setHasAttackedThisRound(true);
+            if(playerOneHero.getHealth() < 1)
+                return -1;
+        }
+
+        if(table.getCurrentlyPlaying() == 1) {
+            Card playerTwoHero = game.getStartGame().getPlayerTwoHero();
+            playerTwoHero.setHealth(playerTwoHero.getHealth() - attackerCard.getAttackDamage());
+
+            // mark the card as used this round
+            attackerCard.setHasAttackedThisRound(true);
+            if(playerTwoHero.getHealth() < 1)
+                return -1;
+        }
+
+        return 1;
+    }
+    public void cardUsesAbility(Table table, Actions action, ArrayNode output)
+    {
+        // frozen card error
+        Card attackerCard = table.getMatrix()[action.getCardAttacker().getX()][action.getCardAttacker().getY()];
+
+        Card attackedCard = table.getMatrix()[action.getCardAttacked().getX()][action.getCardAttacked().getY()];
+
+        if(attackerCard == null)
+            return;
+        if(attackedCard == null)
+            return;
+
+        if(attackerCard.isFrozen()) {
+            catchErrorsAttack(action, output, "Attacker card is frozen.", false);
+            return;
+        }
+
+        // already attacked error
+        if(attackerCard.getHasAttackedThisRound())
+        {
+            catchErrorsAttack(action, output, "Attacker card has already attacked this turn.", false);
+            return;
+        }
+
+        // trying to use heal on enemy players
+        if(attackerCard.getName().equals("Disciple"))
+        {
+            if(table.getCurrentlyPlaying() == 1)
+                if(action.getCardAttacked().getX() != 2 && action.getCardAttacked().getX() != 3) {
+                    catchErrorsAttack(action, output, "Attacked card does not belong to the current player.", false);
+                    return;
+                }
+            if(table.getCurrentlyPlaying() == 2)
+                if(action.getCardAttacked().getX() != 0 && action.getCardAttacked().getX() != 1) {
+                    catchErrorsAttack(action, output, "Attacked card does not belong to the current player.", false);
+                    return;
+                }
+        }
+
+        // trying to use attack abilities on friendly minions
+        if(attackerCard.getName().equals("The Ripper") || attackerCard.getName().equals("Miraj") ||
+                attackerCard.getName().equals("The Cursed One")) {
+            if (table.getCurrentlyPlaying() == 1) {
+                if (action.getCardAttacked().getX() != 0 && action.getCardAttacked().getX() != 1) {
+                    catchErrorsAttack(action, output, "Attacked card does not belong to the enemy.", false);
+                    return;
+                }
+            } else if (table.getCurrentlyPlaying() == 2) {
+                if (action.getCardAttacked().getX() != 2 && action.getCardAttacked().getX() != 3) {
+                    catchErrorsAttack(action, output, "Attacked card does not belong to the enemy.", false);
+                    return;
+                }
+            }
+
+            // did not target an enemy tank if it exists on enemy rows case
+
+            // check if enemy has tanks on his side
+            boolean enemyRowHasTanks = false;
+
+            if (table.getCurrentlyPlaying() == 1)
+                for (int row = 0; row < 2; row++)
+                    for (int col = 0; col < 5; col++)
+                        if (table.getMatrix()[row][col] != null)
+                            if (table.getMatrix()[row][col].cardIsTank())
+                                enemyRowHasTanks = true;
+
+
+            if (table.getCurrentlyPlaying() == 2)
+                for (int row = 2; row < 4; row++)
+                    for (int col = 0; col < 5; col++)
+                        if (table.getMatrix()[row][col] != null)
+                            if (table.getMatrix()[row][col].cardIsTank())
+                                enemyRowHasTanks = true;
+
+            if (!attackedCard.cardIsTank() && enemyRowHasTanks) {
+                catchErrorsAttack(action, output, "Attacked card is not of type 'Tank'.", false);
+                return;
+            }
+        }
+
+        // actual use ability action
+        switch (attackerCard.getName())
+        {
+            case "The Ripper" -> ((TheRipper)attackerCard).weakKnees(table, action.getCardAttacked());
+            case "Miraj" -> ((Miraj)attackerCard).skyjack(table, action.getCardAttacker(), action.getCardAttacked());
+            case "The Cursed One" -> {
+                ((TheCursedOne) attackerCard).shapeshift(table, action.getCardAttacked());
+                if(attackedCard.getHealth() < 1)
+                    table.deleteCardFromTable(action.getCardAttacked().getX(), action.getCardAttacked().getY());
+            }
+            case "Disciple" -> ((Disciple)attackerCard).godsPlan(table, action.getCardAttacked());
+            default -> output.add("No card with the given name!");
+        }
+
+        attackerCard.setHasAttackedThisRound(true);
+
+    }
+    public void unfreezePlayerCards(Table table){
+        if(table.getCurrentlyPlaying() == 1)
+            for(int row = 0; row < 2; row++)
+                for(int col = 0; col < 5; col++)
+                    if(table.getMatrix()[row][col] != null)
+                        if(table.getMatrix()[row][col].isFrozen())
+                            table.getMatrix()[row][col].unfreezeCard();
+
+        if(table.getCurrentlyPlaying() == 2)
+            for(int row = 2; row < 4; row++)
+                for(int col = 0; col < 5; col++)
+                    if(table.getMatrix()[row][col] != null)
+                        if(table.getMatrix()[row][col].isFrozen())
+                            table.getMatrix()[row][col].unfreezeCard();
+
+    }
+    public void cardUsesAttack(Table table, Actions action, ArrayNode output)
+    {
+        // frozen card error
+        Card attackerCard = table.getMatrix()[action.getCardAttacker().getX()][action.getCardAttacker().getY()];
+
+        Card attackedCard = table.getMatrix()[action.getCardAttacked().getX()][action.getCardAttacked().getY()];
+
+        if(attackerCard == null)
+            return;
+        if(attackedCard == null)
+            return;
+
+        if(attackerCard.isFrozen()) {
+           catchErrorsAttack(action, output, "Attacker card is frozen.", false);
+           return;
+       }
+
+        // already attacked error
+       if(attackerCard.getHasAttackedThisRound())
+       {
+            catchErrorsAttack(action, output, "Attacker card has already attacked this turn.", false);
+            return;
+       }
+
+       if(table.getCurrentlyPlaying() == 1) {
+           if (action.getCardAttacked().getX() != 0 && action.getCardAttacked().getX() != 1) {
+               catchErrorsAttack(action, output, "Attacked card does not belong to the enemy.", false);
+               return;
+           }
+       } else if (table.getCurrentlyPlaying() == 2) {
+           if (action.getCardAttacked().getX() != 2 && action.getCardAttacked().getX() != 3) {
+               catchErrorsAttack(action, output, "Attacked card does not belong to the enemy.", false);
+               return;
+           }
+       }
+
+       // did not target an enemy tank if it exists on enemy rows
+
+        // check if enemy has tanks on his side
+        boolean enemyRowHasTanks = false;
+
+        if(table.getCurrentlyPlaying() == 1)
+            for(int row = 0; row < 2; row++)
+                for(int col = 0; col < 5; col++)
+                    if(table.getMatrix()[row][col] != null)
+                        if(table.getMatrix()[row][col].cardIsTank())
+                            enemyRowHasTanks = true;
+
+
+        if(table.getCurrentlyPlaying() == 2)
+            for(int row = 2; row < 4; row++)
+                for(int col = 0; col < 5; col++)
+                    if(table.getMatrix()[row][col] != null)
+                        if(table.getMatrix()[row][col].cardIsTank())
+                            enemyRowHasTanks = true;
+
+        if(!attackedCard.cardIsTank() && enemyRowHasTanks){
+            catchErrorsAttack(action, output, "Attacked card is not of type 'Tank'.", false);
+            return;
+        }
+
+        // actual attack action
+        attackedCard.setHealth(attackedCard.getHealth() - attackerCard.getAttackDamage());
+        if(attackedCard.getHealth() < 1)
+            table.deleteCardFromTable(action.getCardAttacked().getX(), action.getCardAttacked().getY());
+        attackerCard.setHasAttackedThisRound(true);
+    }
+    public void catchErrorsAttack(Actions action, ArrayNode output, String error, boolean attackedIsHero)
+    {
+        // general method to catch all type of attack errors
+        ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
+        nodeFinal.put("command", action.getCommand());
+
+        ObjectNode attackerNode = JsonNodeFactory.instance.objectNode();
+        attackerNode.put("x", action.getCardAttacker().getX());
+        attackerNode.put("y", action.getCardAttacker().getY());
+        nodeFinal.replace("cardAttacker", attackerNode);
+
+        if(!attackedIsHero) {
+            ObjectNode attackedNode = JsonNodeFactory.instance.objectNode();
+            attackedNode.put("x", action.getCardAttacked().getX());
+            attackedNode.put("y", action.getCardAttacked().getY());
+            nodeFinal.replace("cardAttacked", attackedNode);
+        }
+
+        nodeFinal.put("error", error);
+
+        output.add(nodeFinal);
+    }
+    public ObjectNode getFrozenCardsOnTable(Table table, Actions action)
+    {
+        ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
+        nodeFinal.put("command", action.getCommand());
+
+        ArrayNode frozenCardsNode = JsonNodeFactory.instance.arrayNode();
+        for(int row = 0; row < 4; row++)
+            for(int col = 0; col < 5; col++)
+                if(table.getMatrix()[row][col] != null)
+                    if(table.getMatrix()[row][col].cardIsFrozen())
+                        frozenCardsNode.add(cardToObjectNode(table.getMatrix()[row][col]));
+
+        nodeFinal.replace("output", frozenCardsNode);
+
+        return nodeFinal;
     }
     public void errorCatchGetCardAtPosition(Actions action, Table table, ArrayNode output)
     {
@@ -84,10 +462,18 @@ public class PlayGame {
             ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
             nodeFinal.put("command", action.getCommand());
             nodeFinal.replace("output", res);
+            nodeFinal.put("x", action.getX());
+            nodeFinal.put("y", action.getY());
             output.add(nodeFinal);
         }
-        else
-            output.add("No card at that position.");
+        else {
+            ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
+            nodeFinal.put("command", action.getCommand());
+            nodeFinal.put("output", "No card available at that position.");
+            nodeFinal.put("x", action.getX());
+            nodeFinal.put("y", action.getY());
+            output.add(nodeFinal);
+        }
     }
     public ObjectNode getCardAtPosition(Actions action, Table table)
     {
@@ -98,59 +484,80 @@ public class PlayGame {
     public void errorCatchUseEnvironmentCard(Actions action, Table table, Player player1, Player player2, ArrayNode output)
     {
         int resultCode = useEnvironmentCard(action, table, player1, player2);
-        if(resultCode == -1)
-            output.add("Cannot steal enemy card since the player's row is full.");
-        if(resultCode == -2)
-            output.add("Chosen card is not of type environment.");
-        if(resultCode == -3)
-            output.add("Not enough mana to use environment card.");
-        if(resultCode == -4)
-            output.add("Chosen row does not belong to the enemy.");
+        if(resultCode < 0) {
+            ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
+            nodeFinal.put("affectedRow", action.getAffectedRow());
+            nodeFinal.put("command", action.getCommand());
+            if (resultCode == -1)
+                nodeFinal.put("error", "Cannot steal enemy card since the player's row is full.");
+            if (resultCode == -2)
+                nodeFinal.put("error", "Chosen card is not of type environment.");
+            if (resultCode == -3)
+                nodeFinal.put("error", "Not enough mana to use environment card.");
+            if (resultCode == -4)
+                nodeFinal.put("error", "Chosen row does not belong to the enemy.");
+            nodeFinal.put("handIdx", action.getHandIdx());
 
+            output.add(nodeFinal);
+        }
     }
-    public void unfreezeCards(Table table)
+    public void resetAttackStatus(Table table)
     {
         for(int row = 0; row < 4; row++)
             for(int column = 0; column < 5; column++)
-                if(table.getMatrix()[row][column] != null)
-                    if(table.getMatrix()[row][column].cardIsFrozen())
-                        table.getMatrix()[row][column].unfreezeCard();
+                if(table.getMatrix()[row][column] != null) {
+                    if(table.getMatrix()[row][column].getHasAttackedThisRound())
+                        table.getMatrix()[row][column].setHasAttackedThisRound(false);
+                }
     }
     public int  useEnvironmentCard(Actions action, Table table, Player player1, Player player2){
-        int result = 0;
+        int resultCode = 0;
         if(table.getCurrentlyPlaying() == 1) {
+            // not the environment type card
+            if(!player1.getHand().get(action.getHandIdx()).cardIsEnvironmentCard())
+                return -2;
+            // not enough mana to place the card
+            if(player1.getCurrentMana() < player1.getHand().get(action.getHandIdx()).getMana())
+                return -3;
             // chosen row does not belong to the enemy.
             if(action.getAffectedRow() != 0 && action.getAffectedRow() != 1)
                 return -4;
-            result = useEnvironmentCardEachPlayer(action, table, player1);
+            resultCode = useEnvironmentCardEachPlayer(action, table, player1);
         }
         if(table.getCurrentlyPlaying() == 2) {
+            // not the environment type card
+            if(!player2.getHand().get(action.getHandIdx()).cardIsEnvironmentCard())
+                return -2;
+            // not enough mana to place the card
+            if(player2.getCurrentMana() < player2.getHand().get(action.getHandIdx()).getMana())
+                return -3;
             // chosen row does not belong to the enemy.
             if(action.getAffectedRow() != 2 && action.getAffectedRow() != 3)
                 return -4;
-            result = useEnvironmentCardEachPlayer(action, table, player2);
+            resultCode = useEnvironmentCardEachPlayer(action, table, player2);
         }
+        if(resultCode > 0) {
+            // delete cards which are dead from table
+            for (int column = 0; column < 5; column++)
+                if (table.getMatrix()[action.getAffectedRow()][column] != null) {
+                    if (table.getMatrix()[action.getAffectedRow()][column].getHealth() <= 0) {
+                        table.deleteCardFromTable(action.getAffectedRow(), column);
+                        column--;
+                    }
+                }
+            // eliminate used environment card from player hand and decrease mana
+            if (table.getCurrentlyPlaying() == 1) {
+                player1.setCurrentMana(player1.getCurrentMana() - player1.getHand().get(action.getHandIdx()).getMana());
+                player1.getHand().remove(action.getHandIdx());
+            }
+            if (table.getCurrentlyPlaying() == 2) {
+                player2.setCurrentMana(player2.getCurrentMana() - player2.getHand().get(action.getHandIdx()).getMana());
+                player2.getHand().remove(action.getHandIdx());
+            }
+        }
+        return resultCode;
+    }
 
-        // delete cards which are dead from table
-        for(int column = 0; column < 5; column++)
-            if(table.getMatrix()[action.getAffectedRow()][column] != null)
-                if(table.getMatrix()[action.getAffectedRow()][column].getHealth() == 0)
-                    deleteCardFromTable(table, action.getAffectedRow(), column);
-        // eliminate used environment card from player hand and decrease mana
-        if(table.getCurrentlyPlaying() == 1) {
-            player1.setCurrentMana(player1.getCurrentMana() - player1.getHand().get(action.getHandIdx()).getMana());
-            player1.getHand().remove(action.getHandIdx());
-        }
-        if(table.getCurrentlyPlaying() == 2) {
-            player2.setCurrentMana(player2.getCurrentMana() - player2.getHand().get(action.getHandIdx()).getMana());
-            player2.getHand().remove(action.getHandIdx());
-        }
-        return result;
-    }
-    public void deleteCardFromTable(Table table, int row, int column){
-        // card died and has to be deleted from the table
-        table.getMatrix()[row][column] = null;
-    }
     public int useEnvironmentCardEachPlayer(Actions action, Table table, Player player){
         // check card type and implement special methods
         Card card = player.getHand().get(action.getHandIdx());
@@ -159,36 +566,39 @@ public class PlayGame {
         if(player.getCurrentMana() < card.getMana())
             return -3;
 
-        if(card.getName().equals("Firestorm"))
-            ((Firestorm)card).deploy(table, action.getAffectedRow());
-        else if(card.getName().equals("Winterfell"))
-            ((Winterfell)card).deploy(table, action.getAffectedRow());
-        else if(card.getName().equals("Heart Hound")){
-            int check = ((HeartHound)card).deploy(table, action.getAffectedRow());
-            // error case for not being able to steal a card
-            if(check == -1)
-                // cannot steal enemy card since the player's row is full.
-                return -1;
-        }
-        else {
-            // chosen card is not of type environment.
-            return -2;
+        switch (card.getName()) {
+            case "Firestorm":
+                ((Firestorm) card).deploy(table, action.getAffectedRow());
+                break;
+            case "Winterfell":
+                ((Winterfell) card).deploy(table, action.getAffectedRow());
+                break;
+            case "Heart Hound":
+                int check = ((HeartHound) card).deploy(table, action.getAffectedRow());
+                // error case for not being able to steal a card
+                if (check == -1)
+                    // cannot steal enemy card since the player's row is full.
+                    return -1;
+                break;
+            default:
+                // chosen card is not of type environment.
+                return -2;
         }
         return 1;
     }
     public ObjectNode getEnvironmentCardsInHand(Actions action, Player player1, Player player2){
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
         nodeFinal.put("command", action.getCommand());
-        nodeFinal.put("playerIdx", action.getPlayerIdx());
 
         if(action.getPlayerIdx() == 1) {
             ArrayNode handNode = environmentCardsInHandToObjectNode(player1.getHand());
             nodeFinal.replace("output", handNode);
         }
         if(action.getPlayerIdx() == 2) {
-            ArrayNode deckNode = environmentCardsInHandToObjectNode(player2.getHand());
-            nodeFinal.replace("output", deckNode);
+            ArrayNode handNode = environmentCardsInHandToObjectNode(player2.getHand());
+            nodeFinal.replace("output", handNode);
         }
+        nodeFinal.put("playerIdx", action.getPlayerIdx());
 
         return nodeFinal;
     }
@@ -238,11 +648,26 @@ public class PlayGame {
     }
     public void debug(Actions action, Table table, Player player1, Player player2)
     {
-        System.out.println("Player1 mana is:   " + player1.getCurrentMana());
-        System.out.println("Player2 mana is:   " + player2.getCurrentMana());
-        System.out.println("Player currently doing action:    " + table.getCurrentlyPlaying());
+//        System.out.println("Player1 mana is:   " + player1.getCurrentMana());
+//        System.out.println("Player2 mana is:   " + player2.getCurrentMana());
+//        System.out.println("Player currently doing action:    " + table.getCurrentlyPlaying());
         System.out.println("Action done is:    " + action.getCommand());
+        if(action.getCommand().equals("useEnvironmentCard") && table.getCurrentlyPlaying() == 1)
+            System.out.println("Env card used is " + player1.getHand().get(action.getHandIdx()).getName()) ;
+        if(action.getCommand().equals("useEnvironmentCard") && table.getCurrentlyPlaying() == 2)
+            System.out.println("Env card used is " + player2.getHand().get(action.getHandIdx()).getName()) ;
         System.out.println();
+        System.out.println("---------TABLE----------");
+        System.out.println();
+
+        for(int i = 0; i < 4; i++) {
+            for (int j = 0; j < 5; j++)
+                if(table.getMatrix()[i][j] != null)
+                    System.out.println(table.getMatrix()[i][j].getName() + " is frozen: " + table.getMatrix()[i][j].isFrozen());
+            else
+                System.out.println("NULL");
+            System.out.println();
+        }
     }
     public void placeCard(Actions action, Table table, Player player1, Player player2, ArrayNode output)
     {

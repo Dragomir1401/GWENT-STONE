@@ -1,6 +1,8 @@
 package Cards;
 
+import Games.CardCoordinates;
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -18,7 +20,9 @@ public class Miraj extends Card {
     /**
      * swap between his life and one minion life in the enemy deck
      */
-    public void skyjack() {
-
+    public void skyjack(Table table, CardCoordinates attackerCard, CardCoordinates attackedCard) {
+        int aux = table.getMatrix()[attackerCard.getX()][attackerCard.getY()].getHealth();
+        table.getMatrix()[attackerCard.getX()][attackerCard.getY()].setHealth(table.getMatrix()[attackedCard.getX()][attackedCard.getY()].getHealth());
+        table.getMatrix()[attackedCard.getX()][attackedCard.getY()].setHealth(aux);
     }
 }

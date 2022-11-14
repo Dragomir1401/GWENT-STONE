@@ -1,6 +1,8 @@
 package Cards;
 
+import Games.CardCoordinates;
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -9,16 +11,14 @@ public class Disciple extends Card {
         super(mana, attackDamage, health, description, colors, name);
     }
 
-    public Disciple(CardInput card)
-    {
-        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(),
-                card.getName());
+    public Disciple(CardInput card) {
+        super(card.getMana(), card.getAttackDamage(), card.getHealth(), card.getDescription(), card.getColors(), card.getName());
     }
 
     /**
-     * +2 health to a minion
+     * +2 health to a friendly minion
      */
-    public void gods_plan() {
-
+    public void godsPlan(Table table, CardCoordinates attackedCard) {
+        table.getMatrix()[attackedCard.getX()][attackedCard.getY()].setHealth(table.getMatrix()[attackedCard.getX()][attackedCard.getY()].getHealth() + 2);
     }
 }

@@ -24,6 +24,14 @@ public class Table {
             currentlyPlaying = 1;
     }
 
+    public void deleteCardFromTable(int row, int column){
+        // card died and has to be deleted from the table
+        matrix[row][column] = null;
+        for(int shift = column; shift < 4; shift++)
+            matrix[row][shift] = matrix[row][shift + 1];
+        matrix[row][4] = null;
+    }
+
     public Card[][] getMatrix() {
         return matrix;
     }

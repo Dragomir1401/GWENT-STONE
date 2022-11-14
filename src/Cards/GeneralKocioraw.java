@@ -1,6 +1,7 @@
 package Cards;
 
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -18,7 +19,9 @@ public class GeneralKocioraw extends Card{
     /**
      * +1 attack for all cards on a row
      */
-    public void bloodthirst(){
+    public void bloodThirst(Table table, int affectedRow){
+        for(int col = 0; col < 5; col++)
+            table.getMatrix()[affectedRow][col].setAttackDamage(table.getMatrix()[affectedRow][col].getAttackDamage() + 1);
 
     }
 }

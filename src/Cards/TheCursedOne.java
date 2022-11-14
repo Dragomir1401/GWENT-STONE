@@ -1,6 +1,8 @@
 package Cards;
 
+import Games.CardCoordinates;
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -16,9 +18,11 @@ public class TheCursedOne extends Card {
     }
 
     /**
-     * swap between life and attack on a enemy minion
+     * swap between life and attack on an enemy minion
      */
-    public void shapeshift() {
-
+    public void shapeshift(Table table, CardCoordinates attackedCard) {
+        int aux = table.getMatrix()[attackedCard.getX()][attackedCard.getY()].getHealth();
+        table.getMatrix()[attackedCard.getX()][attackedCard.getY()].setHealth(table.getMatrix()[attackedCard.getX()][attackedCard.getY()].getAttackDamage());
+        table.getMatrix()[attackedCard.getX()][attackedCard.getY()].setAttackDamage(aux);
     }
 }

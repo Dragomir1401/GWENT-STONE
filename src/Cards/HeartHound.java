@@ -21,44 +21,53 @@ public class HeartHound extends Card {
          * steal the highest health enemy minion and put it on your side
          * returns the stolen card and removes it from the enemy line
          */
+        int destinationRow = 0;
+        if(affectedRow == 0)
+            destinationRow = 3;
+        if(affectedRow == 1)
+            destinationRow = 2;
+        if(affectedRow == 2)
+            destinationRow = 1;
+
+        // exit all together when the destinationRow is full
+        boolean destinationRowIsFull = true;
+        for(int col = 0; col < 5; col++)
+            if(table.getMatrix()[destinationRow][col] == null)
+                destinationRowIsFull = false;
+        if(destinationRowIsFull == true)
+            return -1;
+
+        // find the max health card on the affected row
         int maxHealth = 0;
         for(int column = 0; column < 5; column++)
             if(table.getMatrix()[affectedRow][column] != null)
                 if(table.getMatrix()[affectedRow][column].getHealth() > maxHealth)
                     maxHealth = table.getMatrix()[affectedRow][column].getHealth();
 
-        Card stolenCard = null;
         for(int column = 0; column < 5; column++)
             if(table.getMatrix()[affectedRow][column] != null)
                 if(table.getMatrix()[affectedRow][column].getHealth() == maxHealth) {
                     // steal the card and shift the row
-                    stolenCard = table.getMatrix()[affectedRow][column];
+                    Card stolenCard = table.getMatrix()[affectedRow][column];
                     for(int shift = column; shift < 4; shift++)
                         table.getMatrix()[affectedRow][shift] = table.getMatrix()[affectedRow][shift + 1];
                     table.getMatrix()[affectedRow][4] = null;
                     // place it on our row
-                    int destinationRow = 0;
-                    if(affectedRow == 0)
-                        destinationRow = 3;
-                    if(affectedRow == 1)
-                        destinationRow = 2;
-                    if(affectedRow == 2)
-                        destinationRow = 1;
 
-                    boolean placed = false;
-                    for(int check = 0; check < 5; check++)
-                        if(table.getMatrix()[destinationRow][check] != null)
-                            placed = true;
-                    // error case for destinationRow full
-                    if(!placed)
-                        return -1;
-                    else {
-                        for(int shift = column; shift < 4; shift++)
-                            table.getMatrix()[destinationRow][shift] = table.getMatrix()[destinationRow][shift + 1];
-                        table.getMatrix()[destinationRow][column] = stolenCard;
-                    }
-                    break;
-            }
+
+                    // case when we have empty place already even to the left
+                    for(int check = 0; check < column; check++)
+                        if(table.getMatrix()[destinationRow][check] != null) {
+                            table.getMatrix()[destinationRow][check] = stolenCard;
+                            // exit because we placed the new card to empty places to the left
+                            return 1;
+                        }
+
+                    for(int shift = 4; shift > column; shift--)
+                        table.getMatrix()[destinationRow][shift] = table.getMatrix()[destinationRow][shift - 1];
+                    table.getMatrix()[destinationRow][column] = stolenCard;
+                    return 1;
+                }
 
         return 1;
     }

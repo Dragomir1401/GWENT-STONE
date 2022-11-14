@@ -1,6 +1,7 @@
 package Cards;
 
 import fileio.CardInput;
+import init.Table;
 
 import java.util.ArrayList;
 
@@ -17,8 +18,9 @@ public class KingMudface extends Card{
     /**
      * +1 health for all cards on a row
      */
-    public void earthborn(){
-
+    public void earthBorn(Table table, int affectedRow){
+        for(int col = 0; col < 5; col++)
+            table.getMatrix()[affectedRow][col].setHealth(table.getMatrix()[affectedRow][col].getHealth() + 1);
     }
 
 }
