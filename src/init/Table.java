@@ -1,55 +1,74 @@
 package init;
 
-import Cards.Card;
+import cards.Card;
+import constants.Constants;
 
 public class Table {
     private Card[][] matrix;
     private int currentlyPlaying;
-    public Table(){
-        this.matrix = new Card[4][5];
+    public Table() {
+        this.matrix = new Card[Constants.NUMBER_OF_ROWS][Constants.NUMBER_OF_COLUMNS];
         this.currentlyPlaying = 0;
     }
 
-    public Table(Table table){
-        this.matrix = new Card[4][5];
+    public Table(final Table table) {
+        this.matrix = new Card[Constants.NUMBER_OF_ROWS][Constants.NUMBER_OF_COLUMNS];
         this.currentlyPlaying = table.getCurrentlyPlaying();
     }
 
-    public Table(Card[][] matrix, int currentlyPlaying) {
+    public Table(final Card[][] matrix, final int currentlyPlaying) {
         this.matrix = matrix;
         this.currentlyPlaying = currentlyPlaying;
     }
 
-    public void changeCurrentlyPlaying(){
-        if(currentlyPlaying == 1) {
+    /**
+     * changes what player does actions
+     */
+    public void changeCurrentlyPlaying() {
+        if (currentlyPlaying == 1) {
             currentlyPlaying = 2;
             return;
         }
-        if(currentlyPlaying == 2)
+        if (currentlyPlaying == 2) {
             currentlyPlaying = 1;
+        }
     }
 
-    public void deleteCardFromTable(int row, int column){
+    /**
+     * deletes a card with coordinates given from table
+     * @param row - x coordinate
+     * @param column - y coordinate
+     */
+    public void deleteCardFromTable(final int row, final int column) {
         // card died and has to be deleted from the table
         matrix[row][column] = null;
-        for(int shift = column; shift < 4; shift++)
+        for (int shift = column; shift < Constants.NUMBER_OF_ROWS; shift++) {
             matrix[row][shift] = matrix[row][shift + 1];
-        matrix[row][4] = null;
+        }
+        matrix[row][Constants.NUMBER_OF_ROWS] = null;
     }
 
+    /**
+     * getter for actual matrix
+     * @return - matrix table
+     */
     public Card[][] getMatrix() {
         return matrix;
     }
 
-    public void setMatrix(Card[][] matrix) {
-        this.matrix = matrix;
-    }
-
+    /**
+     * getter for what player is doing actions
+     * @return - current player
+     */
     public int getCurrentlyPlaying() {
         return currentlyPlaying;
     }
 
-    public void setCurrentlyPlaying(int currentlyPlaying) {
+    /**
+     * setter for current player
+     * @param currentlyPlaying - player doing actions
+     */
+    public void setCurrentlyPlaying(final int currentlyPlaying) {
         this.currentlyPlaying = currentlyPlaying;
     }
 }

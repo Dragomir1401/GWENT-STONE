@@ -1,9 +1,19 @@
-package Players;
+package players;
 
-import Cards.*;
+import cards.Sentinel;
+import cards.Winterfell;
+import cards.Berserker;
+import cards.Disciple;
+import cards.Firestorm;
+import cards.Goliath;
+import cards.HeartHound;
+import cards.Miraj;
+import cards.TheRipper;
+import cards.TheCursedOne;
+import cards.Warden;
+import cards.Card;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class Player {
     private int numberOfDecks;
@@ -12,15 +22,16 @@ public class Player {
     private ArrayList<Card> hand;
     private int numberOfWins;
 
-    public Player(){
+    public Player() {
         this.numberOfDecks = 0;
-        this.decks = new ArrayList<Deck>();
+        this.decks = new ArrayList<>();
         this.currentMana = 0;
-        this.hand = new ArrayList<Card>();
+        this.hand = new ArrayList<>();
         this.numberOfWins = 0;
     }
 
-    public Player(int numberOfDecks, ArrayList<Deck> decks, int currentMana, ArrayList<Card> hand) {
+    public Player(final int numberOfDecks, final ArrayList<Deck> decks, final int currentMana,
+                  final ArrayList<Card> hand) {
         this.numberOfDecks = numberOfDecks;
         this.decks = decks;
         this.currentMana = currentMana;
@@ -28,10 +39,10 @@ public class Player {
         this.numberOfWins = 0;
     }
 
-    public Player(Player player) {
+    public Player(final Player player) {
         this.numberOfDecks = player.getNumberOfDecks();
         this.decks = new ArrayList<Deck>();
-        for(Deck deck : player.getDecks()) {
+        for (Deck deck : player.getDecks()) {
             Deck newDeck = new Deck();
             for (Card card : deck.getCards()) {
                 Card newCard = new Card();
@@ -57,62 +68,84 @@ public class Player {
         this.hand = new ArrayList<Card>();
     }
 
-    @Override
-    public String toString() {
-        return "Player{" +
-                "numberOfDecks=" + numberOfDecks +
-                ", decks=" + decks +
-                '}';
-    }
-
-    public void winGame(){
+    /**
+     * increases wins for player
+     */
+    public void winGame() {
         this.numberOfWins++;
     }
-    public int getnumberOfDecks() {
-        return numberOfDecks;
-    }
 
-    public void setnumberOfDecks(int numberOfDecks) {
-        this.numberOfDecks = numberOfDecks;
-    }
+    /**
+     * gets player decks
+     * @return - decks
+     */
 
     public ArrayList<Deck> getDecks() {
         return decks;
     }
 
-    public void setDecks(ArrayList<Deck> decks) {
+    /**
+     * setter for player decks
+     * @param decks - player decks
+     */
+
+    public void setDecks(final ArrayList<Deck> decks) {
         this.decks = decks;
     }
 
+    /**
+     * getter for player mana
+     * @return - player mana
+     */
     public int getCurrentMana() {
         return currentMana;
     }
 
-    public void setCurrentMana(int currentMana) {
+    /**
+     * setter for player mana
+     * @param currentMana - player mana
+     */
+    public void setCurrentMana(final int currentMana) {
         this.currentMana = currentMana;
     }
 
+    /**
+     * getter for number of decks
+     * @return
+     */
     public int getNumberOfDecks() {
         return numberOfDecks;
     }
 
-    public void setNumberOfDecks(int numberOfDecks) {
-        this.numberOfDecks = numberOfDecks;
-    }
-
+    /**
+     * getter for player hand
+     * @return - card list
+     */
     public ArrayList<Card> getHand() {
         return hand;
     }
 
-    public void setHand(ArrayList<Card> hand) {
+    /**
+     * setter for player hand
+     * @param hand - card list
+     */
+    public void setHand(final ArrayList<Card> hand) {
         this.hand = hand;
     }
 
+    /**
+     * getter for number of wins
+     * @return - number of wins
+     */
     public int getNumberOfWins() {
         return numberOfWins;
     }
 
-    public void setNumberOfWins(int numberOfWins) {
+    /**
+     * setter for number of wins
+     * @param numberOfWins - number of player wins
+     */
+    public void setNumberOfWins(final int numberOfWins) {
         this.numberOfWins = numberOfWins;
     }
 }

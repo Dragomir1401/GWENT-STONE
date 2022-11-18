@@ -1,7 +1,4 @@
-package Games;
-
-import fileio.ActionsInput;
-import fileio.StartGameInput;
+package games;
 
 import java.util.ArrayList;
 
@@ -14,45 +11,40 @@ public class Game {
         this.actions = new ArrayList<Actions>();
     }
 
-    public Game(StartGame startGame, ArrayList<Actions> actions) {
+    public Game(final StartGame startGame, final  ArrayList<Actions> actions) {
         this.startGame = startGame;
         this.actions = actions;
     }
 
-    public Game(Game game)
-    {
-        this.startGame = new StartGame(game.getStartGame());
-        this.actions = new ArrayList<Actions>();
-        for(Actions action : game.getActions())
-        {
-            Actions newAction = new Actions(action);
-            this.actions.add(newAction);
-        }
-    }
-
+    /**
+     * getter for start game
+     * @return - start game class
+     */
     public StartGame getStartGame() {
         return startGame;
     }
 
+    /**
+     * setter for start game
+     * @param startGame  - start game class
+     */
     public void setStartGame(final StartGame startGame) {
         this.startGame = startGame;
     }
 
+    /**
+     * getter for actions
+     * @return - actions class
+     */
     public ArrayList<Actions> getActions() {
         return actions;
     }
 
+    /**
+     * setter for actions
+     * @param actions - actions class
+     */
     public void setActions(final ArrayList<Actions> actions) {
         this.actions = actions;
-    }
-
-    @Override
-    public String toString() {
-        return "GameInput{"
-                +  "startGame="
-                + startGame
-                + ", actions="
-                + actions
-                + '}';
     }
 }
