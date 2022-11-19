@@ -136,7 +136,7 @@ public class PlayGame {
      * @param player - player info
      * @param action - current action info
      */
-    public void getPlayerWins(final ArrayNode output, final Player player, final Actions action) {
+    private void getPlayerWins(final ArrayNode output, final Player player, final Actions action) {
         ObjectNode resNode = JsonNodeFactory.instance.objectNode();
         resNode.put("command", action.getCommand());
         resNode.put("output", player.getNumberOfWins());
@@ -150,7 +150,7 @@ public class PlayGame {
      * @param player2 - player2 info
      * @param action - current action info
      */
-    public void getTotalGamesPlayed(final ArrayNode output, final Player player1,
+    private void getTotalGamesPlayed(final ArrayNode output, final Player player1,
                                     final Player player2, final Actions action) {
         ObjectNode resNode = JsonNodeFactory.instance.objectNode();
         resNode.put("command", action.getCommand());
@@ -167,7 +167,7 @@ public class PlayGame {
      * @param player1 - player1 info
      * @param player2 - player2 info
      */
-    public void useHeroAbility(final Table table, final Actions action, final Game game,
+    private void useHeroAbility(final Table table, final Actions action, final Game game,
                                final ArrayNode output, final Player player1,
                                final Player player2) {
         if (table.getCurrentlyPlaying() == 1) {
@@ -188,7 +188,7 @@ public class PlayGame {
      * @param output - output node
      * @param player - player info
      */
-    public void useHeroAbilityEachPlayer(final Table table, final Actions action, final Card hero,
+    private void useHeroAbilityEachPlayer(final Table table, final Actions action, final Card hero,
                                          final ArrayNode output, final Player player) {
         // not enough mana error
         if (player.getCurrentMana() < hero.getMana()) {
@@ -261,7 +261,7 @@ public class PlayGame {
      * @param output - output node
      * @param error - error string to make method general
      */
-    public void catchErrorHeroAbility(final Actions action, final ArrayNode output,
+    private void catchErrorHeroAbility(final Actions action, final ArrayNode output,
                                       final String error) {
         ObjectNode errorNode = JsonNodeFactory.instance.objectNode();
         errorNode.put("command", action.getCommand());
@@ -280,7 +280,7 @@ public class PlayGame {
      * @param player2 - player2 info
      * @return - true if hero is dead, else false
      */
-    public boolean checkHeroDeath(final Table table, final Actions actions, final ArrayNode output,
+    private boolean checkHeroDeath(final Table table, final Actions actions, final ArrayNode output,
                                   final Game game, final Player player1,
                                   final Player player2) {
         int resCode = useAttackHero(table, actions, output, game);
@@ -309,7 +309,7 @@ public class PlayGame {
      * @param game - current game info
      * @return -
      */
-    public int useAttackHero(final Table table, final Actions action, final ArrayNode output,
+    private int useAttackHero(final Table table, final Actions action, final ArrayNode output,
                              final Game game) {
         // frozen card error
         Card attackerCard = table.getMatrix()
@@ -404,7 +404,7 @@ public class PlayGame {
      * @param action - action info
      * @param output - output info
      */
-    public void cardUsesAbility(final Table table, final Actions action, final ArrayNode output) {
+    private void cardUsesAbility(final Table table, final Actions action, final ArrayNode output) {
         // frozen card error
         Card attackerCard = table.getMatrix()
                 [action.getCardAttacker().getX()][action.getCardAttacker().getY()];
@@ -502,7 +502,7 @@ public class PlayGame {
      * unfreezes the current player card on table
      * @param table - table info
      */
-    public void unfreezePlayerCards(final Table table) {
+    private void unfreezePlayerCards(final Table table) {
         if (table.getCurrentlyPlaying() == 1) {
             for (int row = 0; row < 2; row++) {
                 for (int col = 0; col < Constants.NUMBER_OF_COLUMNS; col++) {
@@ -535,7 +535,7 @@ public class PlayGame {
      * @param action - action info
      * @param output - output node
      */
-    public void cardUsesAttack(final Table table, final Actions action, final ArrayNode output) {
+    private void cardUsesAttack(final Table table, final Actions action, final ArrayNode output) {
         // frozen card error
         Card attackerCard = table.getMatrix()
                 [action.getCardAttacker().getX()][action.getCardAttacker().getY()];
@@ -602,7 +602,7 @@ public class PlayGame {
      * @param error - specific error string
      * @param attackedIsHero - boolean if the attacked card is hero or not
      */
-    public void catchErrorsAttack(final Actions action, final ArrayNode output, final String error,
+    private void catchErrorsAttack(final Actions action, final ArrayNode output, final String error,
                                   final boolean attackedIsHero) {
         // general method to catch all type of attack errors
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
@@ -630,7 +630,7 @@ public class PlayGame {
      * @param action - cation info
      * @return - output node
      */
-    public ObjectNode getFrozenCardsOnTable(final Table table, final Actions action) {
+    private ObjectNode getFrozenCardsOnTable(final Table table, final Actions action) {
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
         nodeFinal.put("command", action.getCommand());
 
@@ -655,7 +655,7 @@ public class PlayGame {
      * @param table - table info
      * @param output - output node
      */
-    public void errorCatchGetCardAtPosition(final Actions action, final Table table,
+    private void errorCatchGetCardAtPosition(final Actions action, final Table table,
                                             final ArrayNode output) {
         ObjectNode res = getCardAtPosition(action, table);
         if (res != null) {
@@ -681,7 +681,7 @@ public class PlayGame {
      * @param table - table info
      * @return - output node with the card at the given position
      */
-    public ObjectNode getCardAtPosition(final Actions action, final Table table) {
+    private ObjectNode getCardAtPosition(final Actions action, final Table table) {
         if (table.getMatrix()[action.getX()][action.getY()] == null) {
             return null;
         }
@@ -696,7 +696,7 @@ public class PlayGame {
      * @param player2 - player2 info
      * @param output - output node
      */
-    public void errorCatchUseEnvironmentCard(final Actions action, final Table table,
+    private void errorCatchUseEnvironmentCard(final Actions action, final Table table,
                                              final Player player1, final Player player2,
                                              final ArrayNode output) {
         int resultCode = useEnvironmentCard(action, table, player1, player2);
@@ -726,7 +726,7 @@ public class PlayGame {
      * @param table - table info
      * @param game - game info
      */
-    public void resetAttackStatus(final Table table, final Game game) {
+    private void resetAttackStatus(final Table table, final Game game) {
         for (int row = 0; row < Constants.NUMBER_OF_ROWS; row++) {
             for (int column = 0; column < Constants.NUMBER_OF_COLUMNS; column++) {
                 if (table.getMatrix()[row][column] != null) {
@@ -748,7 +748,7 @@ public class PlayGame {
      * @param player2 - player2 info
      * @return - specific negative value for each error
      */
-    public int  useEnvironmentCard(final Actions action, final Table table, final Player player1,
+    private int  useEnvironmentCard(final Actions action, final Table table, final Player player1,
                                    final Player player2) {
         int resultCode = 0;
         if (table.getCurrentlyPlaying() == 1) {
@@ -813,7 +813,7 @@ public class PlayGame {
      * @param player - player info
      * @return - negative number for specific error, 1 for normal behaviour
      */
-    public int useEnvironmentCardEachPlayer(final Actions action, final Table table,
+    private int useEnvironmentCardEachPlayer(final Actions action, final Table table,
                                             final Player player) {
         // check card type and implement special methods
         Card card = player.getHand().get(action.getHandIdx());
@@ -850,7 +850,7 @@ public class PlayGame {
      * @param player2 - player info
      * @return - output node
      */
-    public ObjectNode getEnvironmentCardsInHand(final Actions action, final Player player1,
+    private ObjectNode getEnvironmentCardsInHand(final Actions action, final Player player1,
                                                 final Player player2) {
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
         nodeFinal.put("command", action.getCommand());
@@ -873,7 +873,7 @@ public class PlayGame {
      * @param hand - list of cards in hand of the player
      * @return - output array node
      */
-    public ArrayNode environmentCardsInHandToObjectNode(final ArrayList<Card> hand) {
+    private ArrayNode environmentCardsInHandToObjectNode(final ArrayList<Card> hand) {
         ArrayNode handNode = JsonNodeFactory.instance.arrayNode();
         for (Card card : hand) {
             if (card.cardIsEnvironmentCard()) {
@@ -890,7 +890,7 @@ public class PlayGame {
      * @param table - table info
      * @return - output node
      */
-    public ObjectNode getCardsOnTable(final Actions action, final Table table) {
+    private ObjectNode getCardsOnTable(final Actions action, final Table table) {
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
         nodeFinal.put("command", action.getCommand());
 
@@ -918,7 +918,7 @@ public class PlayGame {
      * @param table - table info
      * @return - output node for command pattern
      */
-    public ObjectNode getPlayerMana(final Actions action, final Player player1,
+    private ObjectNode getPlayerMana(final Actions action, final Player player1,
                                     final Player player2, final Table table) {
         // Create output node
         ObjectNode nodeOutput = JsonNodeFactory.instance.objectNode();
@@ -941,7 +941,7 @@ public class PlayGame {
      * @param player2 - player2 info
      * @param output - output node
      */
-    public void placeCard(final Actions action, final Table table, final Player player1,
+    private void placeCard(final Actions action, final Table table, final Player player1,
                           final Player player2, final ArrayNode output) {
         if (table.getCurrentlyPlaying() == 1) {
             if (placeCardIsError(action, player1, output)) {
@@ -967,7 +967,7 @@ public class PlayGame {
      * @param output - output info
      * @return - yes for error, no for normal behaviour
      */
-    public boolean placeCardIsError(final Actions action, final Player player,
+    private boolean placeCardIsError(final Actions action, final Player player,
                                     final ArrayNode output) {
         if (player.getHand().get(action.getHandIdx()).cardIsEnvironmentCard()) {
             output.add(createPlaceCardErrorFormat(action,
@@ -1069,7 +1069,7 @@ public class PlayGame {
      * @param error - specific error
      * @return - output node
      */
-    public ObjectNode createPlaceCardErrorFormat(final Actions action, final String error) {
+    private ObjectNode createPlaceCardErrorFormat(final Actions action, final String error) {
         ObjectNode nodeOutput = JsonNodeFactory.instance.objectNode();
         nodeOutput.put("command", action.getCommand());
         nodeOutput.put("handIdx", action.getHandIdx());
@@ -1084,7 +1084,7 @@ public class PlayGame {
      * @param action - action info
      * @return - output node
      */
-    public ObjectNode getCardsInHand(final Player player1, final Player player2,
+    private ObjectNode getCardsInHand(final Player player1, final Player player2,
                                      final Actions action) {
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
         nodeFinal.put("command", action.getCommand());
@@ -1108,7 +1108,7 @@ public class PlayGame {
      * @param player1 - player1 info
      * @param player2 - player2 info
      */
-    public void prepareGame(final Game game, final Player player1,
+    private void prepareGame(final Game game, final Player player1,
                             final Player player2) {
         // Shuffle the decks chosen by each player
         Collections.shuffle(player1.getDecks().get(game.getStartGame().getPlayerOneDeckIdx()).
@@ -1126,7 +1126,7 @@ public class PlayGame {
      * @param card - chosen card
      * @return - output node
      */
-    public ObjectNode cardToObjectNode(final Card card) {
+    private ObjectNode cardToObjectNode(final Card card) {
         ObjectNode nodeCard = JsonNodeFactory.instance.objectNode();
 
         nodeCard.put("mana", card.getMana());
@@ -1153,7 +1153,7 @@ public class PlayGame {
      * @param deck - chosen deck
      * @return - output node
      */
-    public ArrayNode deckToObjectNode(final Deck deck) {
+    private ArrayNode deckToObjectNode(final Deck deck) {
         ArrayNode deckNode = JsonNodeFactory.instance.arrayNode();
         for (Card card : deck.getCards()) {
             ObjectNode cardNode = cardToObjectNode(card);
@@ -1167,7 +1167,7 @@ public class PlayGame {
      * @param hand - chosen player hand
      * @return - output array node
      */
-    public ArrayNode handToObjectNode(final ArrayList<Card> hand) {
+    private ArrayNode handToObjectNode(final ArrayList<Card> hand) {
         ArrayNode handNode = JsonNodeFactory.instance.arrayNode();
         for (Card card : hand) {
             ObjectNode cardNode = cardToObjectNode(card);
@@ -1184,7 +1184,7 @@ public class PlayGame {
      * @param playerIndex - what player deck is targeted
      * @return - output node
      */
-    public ObjectNode showPlayerDeck(final Actions action, final Game game,
+    private ObjectNode showPlayerDeck(final Actions action, final Game game,
                                      final Player player, final int playerIndex) {
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
 
@@ -1213,7 +1213,7 @@ public class PlayGame {
      * @param player2 - player2 info
      * @return - output node
      */
-    public ObjectNode getPlayerDeck(final Actions action, final Game game,
+    private ObjectNode getPlayerDeck(final Actions action, final Game game,
                                     final Player player1, final Player player2) {
         ObjectNode nodeOutput = JsonNodeFactory.instance.objectNode();
         if (action.getPlayerIdx() == 1) {
@@ -1232,7 +1232,7 @@ public class PlayGame {
      * @param table - table info
      * @return - output node
      */
-    public ObjectNode getPlayerTurn(final Actions action, final Table table) {
+    private ObjectNode getPlayerTurn(final Actions action, final Table table) {
         // Create output node
         ObjectNode nodeOutput = JsonNodeFactory.instance.objectNode();
         nodeOutput.put("command", action.getCommand());
@@ -1247,7 +1247,7 @@ public class PlayGame {
      * @param game - game info
      * @param manaIncrease - gradual increased mana increase
      */
-    public void drawCardsAndIncreaseMana(final Player player1, final Player player2,
+    private void drawCardsAndIncreaseMana(final Player player1, final Player player2,
                                          final Game game, final int manaIncrease) {
         // Draw first card from the deck for each player and remove it from the deck
         if (!player1.getDecks().get(game.getStartGame().getPlayerOneDeckIdx()).getCards().
@@ -1279,7 +1279,7 @@ public class PlayGame {
      * @param card - chosen card
      * @return - output node
      */
-    public ObjectNode heroCardToObjectNode(final Card card) {
+    private ObjectNode heroCardToObjectNode(final Card card) {
         ObjectNode nodeCard = JsonNodeFactory.instance.objectNode();
 
         nodeCard.put("mana", card.getMana());
@@ -1303,7 +1303,7 @@ public class PlayGame {
      * @param action - action info
      * @return - output node
      */
-    public ObjectNode showPlayerHero(final Game game, final Actions action) {
+    private ObjectNode showPlayerHero(final Game game, final Actions action) {
         ObjectNode nodeFinal = JsonNodeFactory.instance.objectNode();
 
         nodeFinal.put("command", action.getCommand());

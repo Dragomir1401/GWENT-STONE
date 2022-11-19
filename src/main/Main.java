@@ -68,7 +68,7 @@ public final class Main {
         ArrayNode output = objectMapper.createArrayNode();
 
         // ENTRY POINT
-        Start begin = new Start(inputData, output);
+        new Start(inputData, output);
 
         ObjectWriter objectWriter = objectMapper.writerWithDefaultPrettyPrinter();
         objectWriter.writeValue(new File(filePath2), output);

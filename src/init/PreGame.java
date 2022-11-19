@@ -6,7 +6,7 @@ public class PreGame {
     private Player player1;
     private Player player2;
 
-    public PreGame(final Player player1, final Player player2) {
+    protected PreGame(final Player player1, final Player player2) {
         this.player1 = new Player(player1);
         this.player2 = new Player(player2);
     }
@@ -15,7 +15,7 @@ public class PreGame {
      * getter for player1
      * @return - player1 info
      */
-    public Player getPlayer1() {
+    protected Player getPlayer1() {
         return player1;
     }
 
@@ -23,7 +23,7 @@ public class PreGame {
      * setter for player1
      * @param player1 - player1 info
      */
-    public void setPlayer1(final Player player1) {
+    protected void setPlayer1(final Player player1) {
         this.player1 = player1;
     }
 
@@ -31,7 +31,7 @@ public class PreGame {
      * getter for player2
      * @return - player2 info
      */
-    public Player getPlayer2() {
+    protected Player getPlayer2() {
         return player2;
     }
 
@@ -39,7 +39,7 @@ public class PreGame {
      * setter for player2
      * @param player2 - player2 info
      */
-    public void setPlayer2(final Player player2) {
+    protected void setPlayer2(final Player player2) {
         this.player2 = player2;
     }
 }

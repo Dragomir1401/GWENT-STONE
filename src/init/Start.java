@@ -42,7 +42,7 @@ public class Start {
      * @param id - player id
      * @return - the player deck
      */
-    public DecksInput getPlayerDecks(final Input data, final int id) {
+    protected DecksInput getPlayerDecks(final Input data, final int id) {
         if (id == 1) {
             return data.getPlayerOneDecks();
         }
@@ -59,7 +59,7 @@ public class Start {
      * @param playerId - what player deck we create
      * @return - the array of decks
      */
-    public ArrayList<Deck> createMyDeckOfDecks(final Input data, final int playerId) {
+    protected ArrayList<Deck> createMyDeckOfDecks(final Input data, final int playerId) {
         ArrayList<Deck> myDecks = new ArrayList<>();
 
         for (ArrayList<CardInput> deck : getPlayerDecks(data, playerId).getDecks()) {
@@ -119,7 +119,7 @@ public class Start {
      * @param data - the actual input
      * @return - the resulted array of games
      */
-    public ArrayList<Game> getGames(final Input data) {
+    protected ArrayList<Game> getGames(final Input data) {
         ArrayList<Game> myGames = new ArrayList<>();
 
         for (GameInput gameParser : data.getGames()) {
@@ -170,7 +170,7 @@ public class Start {
      * @param heroInput - input card of the given hero
      * @return - hero card to use in games
      */
-    public Card heroSelection(final CardInput heroInput) {
+    protected Card heroSelection(final CardInput heroInput) {
         Card hero = new Card();
         switch (heroInput.getName()) {
             case "Lord Royce" -> hero = new LordRoyce(heroInput);

@@ -1,0 +1,129 @@
+______________________________
+|                            |
+|   Copyright                |
+|      Dragomir Andrei 2022  |
+|                            |
+|____________________________|
+
+---------------------------------------------------------------------
+Nume: Dragomir Andrei
+Grupa: 322CA
+
+----------------------------------------------------------------------------
+-----------------------------GWENT STONE------------------------------------
+---------------------------------------------------------------------------- 
+
+
+
+----------------------------------------------------------------------------
+
+____________Description___________
+
+    This project is simulating a game of cards with inspiration from The Witcher
+game similar to popular games like HeartStone. It is a Java built design 
+consisting of multiple games played by two players established at the start
+of the program. The input and output are made with JSON files to make readability
+and parsing easier.
+
+    There are different type of cards with different abilities each: minions,
+tanks, environment cards and the most important ones: the heroes. Players are
+allowed to have only one hero which represents them in the battle and has
+the highest health. When a hero dies, the player has lost that game. Program
+also contains commands for game player statistics.
+
+    A short gameplay of the inspiration of the game is presented below:
+
+            https://www.youtube.com/watch?v=QE6V8NgKLEQ
+
+
+-----------------------------------------------------------------------------
+
+
+
+------------------------------------------------------------------------------
+
+____________Implementation____________
+
+    The project has as main action point the init package where the PlayGame
+class has all the important methods implemented. Start class gathers input
+from the input structures and puts it in the specific classes for further
+development.
+
+    There is a general class card which is inherited by all the other cards
+for easy general use. Down casting is applied when we need to use a specific
+method for a specific type of card.
+
+
+
+                                   *Card*
+                                     ||
+  ------------------------------------------------------------------------
+  |                 |                   |                                |
+  |                 |                   |                                |
+Tank-------|   Environment----|       Hero-------------|                 |
+  |        |       |       |  |         |  |        |  |                 |
+Goliath  Warden  Firestorm | Winterfell | LordRoyce | KingMudface        |
+                           |            |           |                    |
+                       HeartHound       |        EmpressThorina        Minion
+                                  GeneralKocioraw                        |
+                                                                         |
+                                                                         |
+    ----------------------------------------------------------------------
+    |          |         |        |         |        |       |          |
+  Berserker  Sentinel  Goliath  Warden  TheRipper  Miraj  Disciple  TheCursedOne
+
+
+
+
+    Player class stores information about players as their decks, what cards
+are in their hand, their current mana and number of wins for statistics.
+The playing table is implemented using a matrix of cards and also stores
+what person is currently doing actions.
+
+    Output is generated using Json Object and Array Nodes to keep the JSON
+format. For each command there are methods which check error cases and
+methods which implement the actual functionality of the attack, ability,
+hero ability, environment card effect and card placing on the table.
+
+    There are also commands for practical debug similar to how getters work.
+These commands are:
+
+-getPlayerDeck  -getPlayerMana  -getPlayerHero  -getCardsOnTable 
+
+-getEnvironmentCardsInHand  -getCardAtPosition  -getFrozenCardsOnTable
+
+-getTotalGamesPlayed  -getPlayerOneWins  -getPlayerTwoWins
+
+
+------------------------------------------------------------------------------
+
+
+
+
+------------------------------------------------------------------------------
+
+_____________Comments_____________
+
+
+    The implementation could have been done better based on the generality of
+the code. Besides this I could have made a more modularized approach. 
+    The structure follows a system of card inheritance but it could have been
+separated for easier build up in: Minions, Heroes, EnvironmentCards and Tanks.
+Use of abstract classes and interfaces could have made the implementation easier.
+
+------------------------------------------------------------------------------
+
+
+
+
+-----------------------------------------------------------------------------
+
+Resources:
+
+https://ocw.cs.pub.ro/courses/poo-ca-cd/laboratoare/agregare-mostenire
+https://ocw.cs.pub.ro/courses/poo-ca-cd/teme/tema
+https://www.youtube.com/watch?v=c3oXzl3kxSw
+https://ocw.cs.pub.ro/courses/poo-ca-cd/administrativ/barem_teme
+https://attacomsian.com/blog/jackson-create-json-array
+
+-----------------------------------------------------------------------------
